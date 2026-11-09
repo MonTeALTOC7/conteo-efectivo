@@ -56,4 +56,7 @@ El borrador se escribe en el dispositivo en cada cambio. IndexedDB guarda los co
 Denominaciones de referencia del Banco Central de Nicaragua.
 
 - [Billetes actuales](https://www.bcn.gob.ni/billetes-actuales)
+- [Billete conmemorativo de C$5](https://www.bcn.gob.ni/nota-de-prensa/bcn-emite-nuevo-billete-de-5-cordobas-y-monedas-conmemorativas-en-su-60-aniversario)
 - [Monedas actuales](https://www.bcn.gob.ni/monedas-actuales)
+
+Las miniaturas informativas de billetes se obtuvieron de fotografías aportadas por el usuario. Las monedas de C$1 y C$5 se tomaron de sus fichas del BCN. Se distribuyen miniaturas de una sola cara con la marca diagonal IMAGEN SIN VALOR, siguiendo los requisitos de reproducción digital del [reglamento del BCN](https://www.bcn.gob.ni/prohibiciones-respecto-del-uso-de-la-moneda).

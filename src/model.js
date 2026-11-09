@@ -1,17 +1,19 @@
 const billTones = [
-  ['#28614f','#d5e9db'], ['#624b82','#e9dff3'], ['#856035','#f2e6cf'],
-  ['#31604f','#e2ead3'], ['#814865','#f1dee8'], ['#2c637e','#d7ebf3'], ['#885a35','#f1e1cc']
+  ['#28614f','#d5e9db'], ['#944c60','#f6e0e6'], ['#856035','#f2e6cf'],
+  ['#2c637e','#d7ebf3'], ['#624b82','#e9dff3'], ['#965938','#f5e2d3'],
+  ['#526b39','#e9f0d9'], ['#4e6063','#e3eaeb']
 ];
 export const MAX_QUANTITY = 999999;
 export const MAX_EXPECTED = 1_000_000_000_000;
 export const MAX_PNG = 450 * 1024;
 export const denominations = [
-  ...[1000,500,200,100,50,20,10].map((value, i) => ({
+  ...[1000,500,200,100,50,20,10,5].map((value, i) => ({
     id: 'b' + value, cents: value * 100, kind: 'bill', label: 'C$ ' + value.toLocaleString('en-US'), mark: value >= 1000 ? '1K' : value, tone: billTones[i]
   })),
-  ...[1000,500,100,50,25,10,5].map(cents => ({
+  ...[500,100,1000,50,25,10,5].map(cents => ({
     id: 'm' + cents, cents, kind: 'coin',
-    label: cents >= 100 ? 'C$ ' + cents / 100 : cents + ' ¢', mark: cents >= 100 ? cents / 100 : cents, tone: ['#7d673a','#f1e9d2']
+    label: cents >= 100 ? 'C$ ' + cents / 100 : cents + ' ¢', mark: cents >= 100 ? cents / 100 : cents, tone: ['#7d673a','#f1e9d2'],
+    extra: cents !== 500 && cents !== 100
   }))
 ];
 const currency = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

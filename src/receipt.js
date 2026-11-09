@@ -1,4 +1,5 @@
 import { MAX_PNG, money, quantity, showDate, summarize } from './model.js';
+import { loadCurrencyImages } from './currency-art.js';
 
 const width = 960;
 const pad = 49;
@@ -41,87 +42,117 @@ function box(ctx, x, y, w, h, radius, fill) {
   ctx.fill();
 }
 function section(ctx, label, lines, y, size) {
-  text(ctx, label, pad, y, { size: 17, weight: 700, color: colors.muted });
-  y += 36;
+  box(ctx, pad, y, inner, 40 + lines.length * (size + 10), 14, '#f5f9f6');
+  text(ctx, label, pad + 18, y + 24, { size: 16, weight: 700, color: colors.muted });
+  y += 53;
   for (const line of lines) {
-    text(ctx, line, pad, y, { size });
+    text(ctx, line, pad + 18, y, { size });
     y += size + 10;
   }
-  return y + 4;
+  return y - 1;
 }
 
-function draw(record, scale) {
+function draw(record, totals, images, scale) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  const totals = summarize(record.counts);
-  const title = wrap(ctx, record.name, inner, 33, 700);
-  const destination = record.destination ? wrap(ctx, record.destination, inner, 24) : [];
+  const title = wrap(ctx, record.name, inner, 40, 700);
+  const destination = record.destination ? wrap(ctx, record.destination, inner - 36, 23) : [];
   const paragraphs = record.notes.split(/\r?\n+/);
   const noteText = [...paragraphs.slice(0, 15), paragraphs.slice(15).join(' ')].filter(Boolean).join('\n');
-  const notes = noteText ? wrap(ctx, noteText, inner, 24) : [];
-  const titleHeight = title.length * 43;
-  const expectedHeight = record.expectedCents === null ? 0 : 64;
-  const destinationHeight = destination.length ? 40 + destination.length * 34 : 0;
-  const notesHeight = notes.length ? 40 + notes.length * 34 : 0;
-  const height = 446 + titleHeight + expectedHeight + destinationHeight + notesHeight + totals.rows.length * 41;
+  const notes = noteText ? wrap(ctx, noteText, inner - 36, 23) : [];
+  const rowHeight = 76;
+  const detailHeight = lines => lines.length ? 52 + lines.length * 33 : 0;
+  const height = 539 + title.length * 48 + (record.expectedCents === null ? 0 : 78)
+    + detailHeight(destination) + detailHeight(notes) + totals.rows.length * rowHeight;
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
   ctx.scale(scale, scale);
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = '#173e32';
-  ctx.fillRect(0, 0, width, 10);
-  text(ctx, 'CONTEO DE EFECTIVO', pad, 62, { size: 21, weight: 700, color: colors.green });
-  text(ctx, showDate(record.date) + '  ·  NIO', width-pad, 62, { size: 20, align: 'right', color: colors.muted });
-  let y = 115;
+  ctx.fillStyle = '#1c5542';
+  ctx.fillRect(0, 0, width, 8);
+  box(ctx, pad, 34, 39, 39, 10, colors.green);
+  text(ctx, 'C$', pad + 19.5, 60, { size: 19, weight: 700, align: 'center', color: '#ffffff' });
+  text(ctx, 'CONTEO DE EFECTIVO', pad + 53, 51, { size: 19, weight: 700, color: colors.green });
+  text(ctx, 'COMPROBANTE DE CONTEO', pad + 53, 72, { size: 13, weight: 700, color: colors.muted });
+  text(ctx, showDate(record.date), width-pad, 51, { size: 20, weight: 700, align: 'right' });
+  text(ctx, 'CÓRDOBAS · NIO', width-pad, 73, { size: 13, weight: 700, align: 'right', color: colors.muted });
+  ctx.fillStyle = colors.rule;
+  ctx.fillRect(pad, 89, inner, 1);
+  let y = 104;
   for (const line of title) {
-    text(ctx, line, pad, y, { size: 33, weight: 700 });
-    y += 43;
+    text(ctx, line, pad, y + 37, { size: 40, weight: 700 });
+    y += 48;
   }
-  const hero = ctx.createLinearGradient(pad, y, width-pad, y + 100);
-  hero.addColorStop(0, '#143e32');
-  hero.addColorStop(1, '#25634b');
-  box(ctx, pad, y - 20, inner, 123, 21, hero);
-  text(ctx, 'TOTAL CONTADO', pad + 26, y + 15, { size: 17, weight: 700, color: '#d0f0d4' });
-  text(ctx, money(totals.total), pad + 26, y + 74, { size: 54, weight: 700, color: '#ffffff' });
-  y += 137;
-  text(ctx, quantity(totals.billPieces) + ' billetes · ' + money(totals.billTotal), pad, y, { size: 21, weight: 700 });
-  text(ctx, quantity(totals.coinPieces) + ' monedas · ' + money(totals.coinTotal), width-pad, y, { size: 21, weight: 700, align:'right' });
-  y += 33;
+  y += 14;
+  const hero = ctx.createLinearGradient(pad, y, width-pad, y + 132);
+  hero.addColorStop(0, '#153c31');
+  hero.addColorStop(1, '#286e54');
+  box(ctx, pad, y, inner, 132, 20, hero);
+  text(ctx, 'TOTAL CONTADO', pad + 24, y + 36, { size: 17, weight: 700, color: '#d0f0d4' });
+  text(ctx, money(totals.total), pad + 24, y + 97, { size: 56, weight: 700, color: '#ffffff' });
+  y += 148;
+  const card = (inner - 14) / 2;
+  for (const [label, pieces, amount, x] of [
+    ['BILLETES', totals.billPieces, totals.billTotal, pad],
+    ['MONEDAS', totals.coinPieces, totals.coinTotal, pad + card + 14]
+  ]) {
+    box(ctx, x, y, card, 75, 13, colors.pale);
+    text(ctx, label + ' · ' + quantity(pieces), x + 16, y + 26, { size: 15, weight: 700, color: colors.muted });
+    text(ctx, money(amount), x + 16, y + 58, { size: 27, weight: 700 });
+  }
+  y += 91;
   if (record.expectedCents !== null) {
     const delta = totals.total - record.expectedCents;
-    box(ctx, pad, y - 9, inner, 48, 10, delta < 0 ? '#fdf0e6' : colors.pale);
-    text(ctx, 'Previsto  ' + money(record.expectedCents), pad + 14, y + 22, { size: 21 });
-    text(ctx, delta === 0 ? 'Monto completo' : (delta < 0 ? 'Faltan ' : 'Sobran ') + money(Math.abs(delta)), width-pad-14, y + 22, { size: 21, weight: 700, align:'right' });
-    y += 64;
+    const shade = delta < 0 ? '#903e23' : colors.green;
+    box(ctx, pad, y, inner, 62, 13, delta < 0 ? '#fdf0e6' : colors.pale);
+    text(ctx, 'MONTO PREVISTO', pad + 16, y + 22, { size: 13, weight: 700, color: colors.muted });
+    text(ctx, money(record.expectedCents), pad + 16, y + 46, { size: 23, weight: 700 });
+    text(ctx, delta === 0 ? 'Monto completo' : (delta < 0 ? 'Faltan ' : 'Sobran ') + money(Math.abs(delta)), width-pad-16, y + 39, { size: 23, weight: 700, align:'right', color: shade });
+    y += 78;
   }
-  if (destination.length) y = section(ctx, 'DESTINO DEL EFECTIVO', destination, y + 5, 24) - 5;
-  if (notes.length) y = section(ctx, 'NOTAS', notes, y + 5, 24) - 5;
-  y += 18;
-  box(ctx, pad, y - 7, inner, 37, 8, colors.pale);
-  text(ctx, 'DENOMINACIÓN', pad + 12, y + 17, { size: 16, weight: 700, color: colors.muted });
-  text(ctx, 'CANTIDAD', 563, y + 17, { size: 16, weight: 700, align:'right', color: colors.muted });
-  text(ctx, 'SUBTOTAL', width-pad-12, y + 17, { size: 16, weight: 700, align:'right', color: colors.muted });
-  y += 30;
-  for (const row of totals.rows) {
-    text(ctx, row.label + '  ·  ' + (row.kind === 'bill' ? 'Billete' : 'Moneda'), pad + 12, y + 25, { size: 20 });
-    text(ctx, quantity(row.count), 563, y + 25, { size: 20, align:'right' });
-    text(ctx, money(row.subtotal), width-pad-12, y + 25, { size: 20, weight: 700, align:'right' });
+  if (destination.length) y = section(ctx, 'DESTINO DEL EFECTIVO', destination, y, 23);
+  if (notes.length) y = section(ctx, 'NOTAS', notes, y, 23);
+  y += 8;
+  text(ctx, 'Desglose por denominación', pad, y + 19, { size: 22, weight: 700 });
+  box(ctx, pad, y + 31, inner, 42, 10, colors.pale);
+  text(ctx, 'DENOMINACIÓN', pad + 16, y + 57, { size: 15, weight: 700, color: colors.muted });
+  text(ctx, 'CANTIDAD', 583, y + 57, { size: 15, weight: 700, align:'right', color: colors.muted });
+  text(ctx, 'SUBTOTAL', width-pad-16, y + 57, { size: 15, weight: 700, align:'right', color: colors.muted });
+  y += 73;
+  for (const [index, row] of totals.rows.entries()) {
+    if (index % 2) box(ctx, pad, y, inner, rowHeight, 0, '#f8faf8');
+    const photo = images.get(row.id);
+    if (photo) {
+      const ratio = Math.min(128 / photo.naturalWidth, 59 / photo.naturalHeight);
+      const w = photo.naturalWidth * ratio, h = photo.naturalHeight * ratio;
+      ctx.drawImage(photo, pad + 16 + (128 - w) / 2, y + (rowHeight - h) / 2, w, h);
+    } else {
+      box(ctx, pad + 54, y + 11, 54, 54, 27, row.tone[1]);
+      text(ctx, String(row.mark), pad + 81, y + 45, { size: 20, weight: 700, align:'center', color: row.tone[0] });
+    }
+    text(ctx, row.label, pad + 162, y + 33, { size: 25, weight: 700 });
+    text(ctx, row.kind === 'bill' ? 'Billete' : 'Moneda', pad + 162, y + 54, { size: 16, color: colors.muted });
+    text(ctx, quantity(row.count), 583, y + 46, { size: 23, align:'right' });
+    text(ctx, money(row.subtotal), width-pad-16, y + 46, { size: 23, weight: 700, align:'right' });
     ctx.fillStyle = colors.rule;
-    ctx.fillRect(pad, y + 40, inner, 1);
-    y += 41;
+    ctx.fillRect(pad, y + rowHeight - 1, inner, 1);
+    y += rowHeight;
   }
-  text(ctx, 'Registro de efectivo preparado para depósito o pago.', pad, y + 37, { size: 17, color: colors.muted });
-  text(ctx, record.id.slice(0, 8).toUpperCase(), width-pad, y + 37, { size: 16, align:'right', color: colors.muted });
-  if (y + 40 > height) throw new Error('El comprobante excede su área de impresión.');
+  text(ctx, 'Registro de efectivo preparado para depósito o pago.', pad, y + 35, { size: 16, color: colors.muted });
+  text(ctx, 'By Carlos Tijerino', pad, y + 64, { size: 17, weight: 700, color: colors.green });
+  text(ctx, 'ID ' + record.id.slice(0, 8).toUpperCase(), width-pad, y + 64, { size: 16, align:'right', color: colors.muted });
+  if (y + 64 > height) throw new Error('El comprobante excede su área de impresión.');
   return canvas;
 }
 const blobFromCanvas = (canvas, type, quality) => new Promise((resolve, reject) => {
   canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo generar la imagen.')), type, quality);
 });
 export async function createPng(record) {
+  const totals = summarize(record.counts);
+  const images = await loadCurrencyImages(totals.rows);
   for (const scale of [1, .9, .78, .67]) {
-    const blob = await blobFromCanvas(draw(record, scale), 'image/png');
+    const blob = await blobFromCanvas(draw(record, totals, images, scale), 'image/png');
     if (blob.size <= MAX_PNG) return blob;
   }
   throw new Error('La imagen excede el tamaño de sincronización. Acortá las notas e intentá de nuevo.');

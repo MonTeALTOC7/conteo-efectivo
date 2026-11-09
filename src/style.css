@@ -14,7 +14,8 @@ h1,h2,p{margin:0}
 .appbar{position:sticky;top:0;z-index:3;background:#f4f9f5f5;border-bottom:1px solid #d8e7dc;backdrop-filter:blur(14px);padding-top:env(safe-area-inset-top)}
 .topbar{min-height:64px;display:flex;gap:12px;align-items:center;justify-content:space-between}
 .brand,.nav button,.account,.icon-button{border:0;background:none;display:inline-flex;align-items:center;gap:7px;padding:0}
-.brand{font-weight:850;letter-spacing:-.04em;font-size:17px;white-space:nowrap}
+.brand{font-weight:850;letter-spacing:-.04em;font-size:17px;white-space:nowrap;text-align:left}
+.brand-credit{display:block;color:var(--muted);font-size:9px;font-weight:650;letter-spacing:0;line-height:1.2}
 .brand-icon{width:34px;height:34px;border-radius:11px;background:linear-gradient(150deg,#34816a,#154334 75%);color:#dcffb3;box-shadow:0 3px 0 #113e30,inset 0 1px #a3df9a90}
 .brand-muted{display:none}
 .nav{display:flex;gap:2px;padding:3px;border:1px solid #dbe8dd;background:#e9f1ea;border-radius:12px}
@@ -70,8 +71,11 @@ h1{font-size:clamp(1.75rem,6.8vw,2.9rem);line-height:1.04;letter-spacing:-.055em
 .denom-row{min-height:50px;border-bottom:1px solid #eef3ef}
 .denom-row[data-active="true"]{background:#f5faf5}
 .denom{display:flex;align-items:center;gap:5px;white-space:nowrap;font-weight:800;font-size:12px}
-.note{width:23px;height:16px;border:1px solid var(--tone);color:var(--tone);background:var(--tint);border-radius:4px;display:grid;place-items:center;font-size:8px;box-shadow:0 2px 0 var(--tone);flex:none;transform:rotate(-8deg)}
-.note.coin{border-radius:50%;width:19px;height:19px;transform:none;box-shadow:0 2px 0 #b39c51}
+.denom.with-bill{flex-direction:column;align-items:flex-start;gap:3px;padding-block:6px}
+.currency-thumb{display:block;flex:none;object-fit:contain}
+.currency-thumb.bill{width:72px;height:34px;object-position:left;border-radius:4px}
+.currency-thumb.coin{width:32px;height:32px;border-radius:50%}
+.note.coin{width:25px;height:25px;border:1px solid var(--tone);color:var(--tone);background:var(--tint);border-radius:50%;display:grid;place-items:center;font-size:9px;flex:none}
 .quantity{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;overflow:hidden;border:1px solid #dce9df;border-radius:9px;height:44px;background:#fff}
 .quantity button{border:0;background:#f2f7f3;height:100%;color:#2b6653;font-size:20px;font-weight:650;padding:0}
 .quantity button:hover{background:#e2f0e6}
@@ -88,7 +92,9 @@ details summary strong{font-size:14px}
 details summary small{font-size:11px;color:var(--muted);margin-top:2px}
 .coin-icon{background:#f7f0d9;color:#716236}
 .chevron{margin-left:auto;color:#456c5a}
-details[open] .chevron{transform:rotate(180deg)}
+details[open]>summary .chevron{transform:rotate(180deg)}
+.extra-coins>summary{min-height:42px;color:var(--muted);font-size:12px;font-weight:700;background:#f7faf8;border-radius:0 0 var(--radius) var(--radius)}
+.extra-coins[open]>summary{border-radius:0}
 .fields{padding:0 13px 14px;display:grid;gap:11px}
 .fields label,.search{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:760}
 .fields label>span{color:var(--muted);font-size:10px;font-weight:550;display:inline}
@@ -142,11 +148,13 @@ dialog::backdrop{background:#0c291eb0}
  main{padding-top:33px;padding-bottom:20px}.page-heading{margin-bottom:20px}.subtitle{font-size:14px}#newCount{font-size:13px;width:auto;padding:0 13px}
  .workspace{grid-template-columns:minmax(0,1.22fr) minmax(0,1fr);grid-template-rows:auto auto 1fr;grid-template-areas:"count hero" "count details" "count actions";gap:16px;align-items:start}
  .hero{padding:23px 18px 16px}.hero-art{width:185px;right:-15px;top:0}.amount{font-size:clamp(1.7rem,4.3vw,3.3rem)}.amount.compact{font-size:clamp(1.4rem,3.05vw,2.7rem)}.hero-stats strong{font-size:15px}
- .panel-heading{padding:16px}.fields{padding:0 16px 16px}.denom-labels,.denom-row{grid-template-columns:minmax(70px,1fr) 130px minmax(75px,1fr);padding-inline:15px;gap:9px}.denom-row{min-height:58px}.denom,.subtotal{font-size:14px}.note{width:27px;height:19px}.quantity{grid-template-columns:40px minmax(0,1fr) 40px;height:42px}
+ .panel-heading{padding:16px}.fields{padding:0 16px 16px}.denom-labels,.denom-row{grid-template-columns:minmax(70px,1fr) 130px minmax(75px,1fr);padding-inline:15px;gap:9px}.denom-row{min-height:58px}.denom,.subtotal{font-size:14px}.quantity{grid-template-columns:40px minmax(0,1fr) 40px;height:42px}
  .count-actions{position:static;padding:0;background:none;border:0;backdrop-filter:none}.count-actions p{text-align:left}
  .history-tools,.history-list{padding-inline:20px}
 }
 @media(min-width:1000px){
  .workspace{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:19px}.hero{padding:24px 22px 17px}.hero-art{width:232px;right:-14px;top:-6px}.hero-stats{max-width:75%}.denom-labels,.denom-row{padding-inline:20px;grid-template-columns:1fr 146px 1fr}.quantity{grid-template-columns:44px minmax(0,1fr) 44px}.panel-heading{padding:18px}.fields{padding-inline:18px}
+ .denom.with-bill{flex-direction:row;align-items:center;gap:9px}
+ .currency-thumb.bill{width:92px;height:43px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}

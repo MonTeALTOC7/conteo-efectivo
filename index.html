@@ -15,7 +15,7 @@
     <div class="topbar shell">
       <button class="brand" id="home" type="button" aria-label="Ir al conteo">
         <span class="brand-icon" data-icon="wallet"></span>
-        <span>Conteo<span class="brand-muted"> de Efectivo</span></span>
+        <span>Conteo<span class="brand-muted"> de Efectivo</span><small class="brand-credit">By Carlos Tijerino</small></span>
       </button>
       <nav class="nav" aria-label="Secciones">
         <button type="button" data-view="count" aria-current="page"><span data-icon="grid"></span>Conteo</button>
@@ -73,13 +73,17 @@
           </div>
         </section>
         <section class="panel counting" aria-labelledby="billsTitle">
-          <div class="panel-heading"><span class="panel-icon" data-icon="bills"></span><div><h2 id="billsTitle">Billetes</h2><p>Ingresá las cantidades</p></div><span class="pill" id="activeBills">0 de 7</span></div>
+          <div class="panel-heading"><span class="panel-icon" data-icon="bills"></span><div><h2 id="billsTitle">Billetes</h2><p>Identificá el billete e ingresá la cantidad</p></div><span class="pill" id="activeBills">0 de 8</span></div>
           <div class="denom-labels"><span>Denominación</span><span>Cantidad</span><span>Subtotal</span></div>
           <div id="bills"></div>
           <details id="coinPanel">
-            <summary><span class="panel-icon coin-icon" data-icon="coin"></span><span><strong>Monedas</strong><small id="activeCoins">7 denominaciones</small></span><span class="chevron" data-icon="chevron"></span></summary>
+            <summary><span class="panel-icon coin-icon" data-icon="coin"></span><span><strong>Monedas</strong><small id="activeCoins">C$ 1 y C$ 5</small></span><span class="chevron" data-icon="chevron"></span></summary>
             <div class="denom-labels"><span>Denominación</span><span>Cantidad</span><span>Subtotal</span></div>
             <div id="coins"></div>
+            <details id="extraCoinsPanel" class="extra-coins">
+              <summary>Otras monedas <span class="chevron" data-icon="chevron"></span></summary>
+              <div id="extraCoins"></div>
+            </details>
           </details>
         </section>
         <section class="panel details" aria-labelledby="detailsTitle">

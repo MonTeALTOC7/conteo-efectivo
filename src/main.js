@@ -1,5 +1,6 @@
 import './style.css';
 import { asDraft, asRecord, denominations, emptyDraft, legacyDraft, legacyId, MAX_PNG, MAX_QUANTITY, money, normalized, parseExpected, quantity, receiptName, showDate, summarize, today } from './model.js';
+import { currencyImageUrl } from './currency-art.js';
 import { createPdf, createPng } from './receipt.js';
 import { adoptGuest, changeLocal, importLocal, listLocal, mergeRemote, readDraft, writeDraft } from './store.js';
 import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, fetchPng, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
@@ -143,14 +144,26 @@ const heroObserver = new IntersectionObserver(([entry]) => {
 heroObserver.observe($('hero'));
 
 const controls = new Map();
+const billKinds = denominations.filter(item => item.kind === 'bill').length;
 for (const denom of denominations) {
   const row = dom('div', '', 'denom-row');
   const label = dom('div', '', 'denom');
-  const mark = dom('span', String(denom.mark), denom.kind === 'coin' ? 'note coin' : 'note');
-  mark.style.setProperty('--tone', denom.tone[0]);
-  mark.style.setProperty('--tint', denom.tone[1]);
-  mark.setAttribute('aria-hidden', 'true');
-  label.append(mark, denom.label);
+  const url = currencyImageUrl(denom.id);
+  if (url) {
+    const image = dom('img', '', 'currency-thumb ' + denom.kind);
+    image.src = url;
+    image.alt = '';
+    image.decoding = 'async';
+    if (denom.kind === 'bill') label.classList.add('with-bill');
+    label.append(image);
+  } else {
+    const mark = dom('span', String(denom.mark), 'note coin');
+    mark.style.setProperty('--tone', denom.tone[0]);
+    mark.style.setProperty('--tint', denom.tone[1]);
+    mark.setAttribute('aria-hidden', 'true');
+    label.append(mark);
+  }
+  label.append(denom.label);
   const qty = dom('div', '', 'quantity');
   const name = (denom.kind === 'bill' ? 'billetes de ' : 'monedas de ') + denom.label;
   const input = dom('input');
@@ -188,7 +201,7 @@ for (const denom of denominations) {
   qty.append(dec, input, inc);
   const subtotal = dom('div', 'C$ 0.00', 'subtotal zero');
   row.append(label, qty, subtotal);
-  $(denom.kind === 'bill' ? 'bills' : 'coins').append(row);
+  $(denom.kind === 'bill' ? 'bills' : denom.extra ? 'extraCoins' : 'coins').append(row);
   controls.set(denom.id, { row, input, subtotal, inc, dec, denom });
 }
 function updateQuantity(id, value) {
@@ -223,8 +236,8 @@ function renderSummary() {
   $('coinTotal').textContent = money(total.coinTotal);
   $('billPieces').textContent = '· ' + quantity(total.billPieces);
   $('coinPieces').textContent = '· ' + quantity(total.coinPieces);
-  $('activeBills').textContent = total.billKinds + ' de 7';
-  $('activeCoins').textContent = total.coinKinds ? total.coinKinds + ' de 7 usadas · ' + money(total.coinTotal) : '7 denominaciones';
+  $('activeBills').textContent = total.billKinds + ' de ' + billKinds;
+  $('activeCoins').textContent = total.coinKinds ? quantity(total.coinPieces) + ' piezas · ' + money(total.coinTotal) : 'C$ 1 y C$ 5';
   const expected = parseExpected(draft.expected);
   const difference = $('difference');
   difference.hidden = expected === null;
@@ -245,6 +258,7 @@ function renderEditor() {
   for (const [id, key] of Object.entries(fields)) $(id).value = draft[key];
   for (const [id, {input}] of controls) input.value = draft.counts[id] || '';
   $('coinPanel').open = denominations.some(item => item.kind === 'coin' && draft.counts[item.id]);
+  $('extraCoinsPanel').open = denominations.some(item => item.extra && draft.counts[item.id]);
   renderSummary();
 }
 function hasChanges() {
@@ -373,9 +387,10 @@ async function getPng(entry) {
   await changeLocal(owner, record.id, latest => latest?.record.mutation === record.mutation ? { ...latest, png } : undefined);
   return png;
 }
-function showReceipt(record, imagePromise) {
+function showReceipt(record, imagePromise, original = false) {
   const body = showSheet('COMPROBANTE', 'PNG del conteo');
   const version = sheetVersion;
+  const redesign = original ? [button('Diseño actual', () => showReceipt(record, createPng(record)))] : [];
   body.append(dom('p', 'Preparando la imagen…'));
   Promise.resolve(imagePromise).then(png => {
     if (version !== sheetVersion) return;
@@ -404,16 +419,16 @@ function showReceipt(record, imagePromise) {
       catch { receiptStatus.textContent = 'No se pudo crear el PDF. El PNG sigue disponible.'; }
       finally { pdf.disabled = false; }
     });
-    body.replaceChildren(sheetButtons(button('Descargar PNG', () => download(png, pngName), 'primary', 'download'), share, pdf),
+    body.replaceChildren(sheetButtons(button('Descargar PNG', () => download(png, pngName), 'primary', 'download'), share, pdf, ...redesign),
       receiptStatus, image);
   }).catch(error => {
-    if (version === sheetVersion) body.replaceChildren(dom('p', error.message || 'No se pudo abrir el PNG.'));
+    if (version === sheetVersion) body.replaceChildren(dom('p', error.message || 'No se pudo abrir el PNG.'), ...redesign);
   });
 }
 $('preview').onclick = () => {
   try {
     const existing = savedDraft === JSON.stringify(draft) && records.find(entry => entry.record.id === draft.id);
-    if (existing) showReceipt(existing.record, getPng(existing));
+    if (existing) showReceipt(existing.record, getPng(existing), true);
     else {
       const record = asRecord(draft);
       showReceipt(record, createPng(record));
@@ -439,7 +454,7 @@ function showHistoryEntry(entry) {
     replaceDraft(asDraft(record), entry);
     setView('count');
   };
-  body.append(sheetButtons(button('Abrir PNG', () => showReceipt(record, getPng(entry)), 'primary', 'image'),
+  body.append(sheetButtons(button('Abrir PNG', () => showReceipt(record, getPng(entry), true), 'primary', 'image'),
     button('Editar', () => {
       if (hasChanges()) confirmSheet('Abrir conteo guardado', 'Se reemplazará el borrador actual.', edit, 'Abrir');
       else edit();

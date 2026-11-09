@@ -18,17 +18,17 @@ service cloud.firestore {
     }
     function validCounts(data) {
       return data is map &&
-        data.keys().hasOnly(['b1000','b500','b200','b100','b50','b20','b10','m1000','m500','m100','m50','m25','m10','m5']) &&
+        data.keys().hasOnly(['b1000','b500','b200','b100','b50','b20','b10','b5','m1000','m500','m100','m50','m25','m10','m5']) &&
         validQuantity(data,'b1000') && validQuantity(data,'b500') && validQuantity(data,'b200') &&
         validQuantity(data,'b100') && validQuantity(data,'b50') && validQuantity(data,'b20') &&
-        validQuantity(data,'b10') && validQuantity(data,'m1000') && validQuantity(data,'m500') &&
+        validQuantity(data,'b10') && validQuantity(data,'b5') && validQuantity(data,'m1000') && validQuantity(data,'m500') &&
         validQuantity(data,'m100') && validQuantity(data,'m50') && validQuantity(data,'m25') &&
         validQuantity(data,'m10') && validQuantity(data,'m5');
     }
     function total(data) {
       return quantity(data,'b1000')*100000 + quantity(data,'b500')*50000 + quantity(data,'b200')*20000 +
         quantity(data,'b100')*10000 + quantity(data,'b50')*5000 + quantity(data,'b20')*2000 +
-        quantity(data,'b10')*1000 + quantity(data,'m1000')*1000 + quantity(data,'m500')*500 +
+        quantity(data,'b10')*1000 + quantity(data,'b5')*500 + quantity(data,'m1000')*1000 + quantity(data,'m500')*500 +
         quantity(data,'m100')*100 + quantity(data,'m50')*50 + quantity(data,'m25')*25 +
         quantity(data,'m10')*10 + quantity(data,'m5')*5;
     }
