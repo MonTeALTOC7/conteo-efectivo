@@ -71,11 +71,9 @@ h1{font-size:clamp(1.75rem,6.8vw,2.9rem);line-height:1.04;letter-spacing:-.055em
 .denom-row{min-height:50px;border-bottom:1px solid #eef3ef}
 .denom-row[data-active="true"]{background:#f5faf5}
 .denom{display:flex;align-items:center;gap:5px;white-space:nowrap;font-weight:800;font-size:12px}
-.denom.with-bill{flex-direction:column;align-items:flex-start;gap:3px;padding-block:6px}
-.currency-thumb{display:block;flex:none;object-fit:contain}
-.currency-thumb.bill{width:72px;height:34px;object-position:left;border-radius:4px}
-.currency-thumb.coin{width:32px;height:32px;border-radius:50%}
-.note.coin{width:25px;height:25px;border:1px solid var(--tone);color:var(--tone);background:var(--tint);border-radius:50%;display:grid;place-items:center;font-size:9px;flex:none}
+.cash-mark{display:grid;place-items:center;flex:none;background:var(--tint);color:var(--tone);font-size:10px;font-weight:850;font-variant-numeric:tabular-nums}
+.cash-mark.bill{width:32px;height:25px;border-radius:7px;border-left:3px solid var(--tone)}
+.cash-mark.coin{width:25px;height:25px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--tone)}
 .quantity{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;overflow:hidden;border:1px solid #dce9df;border-radius:9px;height:44px;background:#fff}
 .quantity button{border:0;background:#f2f7f3;height:100%;color:#2b6653;font-size:20px;font-weight:650;padding:0}
 .quantity button:hover{background:#e2f0e6}
@@ -108,6 +106,15 @@ details[open]>summary .chevron{transform:rotate(180deg)}
 .count-actions{grid-area:actions;position:fixed;z-index:2;bottom:0;left:0;right:0;background:#f3f8f4f7;border-top:1px solid #d7e7db;padding:9px 16px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(14px)}
 .action-buttons{display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
 .count-actions p{font-size:10px;color:var(--muted);margin-top:6px;text-align:center;min-height:14px}
+.personal-card{margin-top:18px;display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid var(--border);border-radius:15px;background:#f7fbf8}
+.personal-card img,.personal-icon{width:58px;height:72px;flex:none;background:#e1efe5;border-radius:12px;color:#2d7157}
+.personal-card img{object-fit:contain}
+.personal-card:has(img:not([hidden])) .personal-icon{display:none}
+.personal-card strong{font-size:14px}
+.personal-card p{font-size:12px;color:var(--muted);line-height:1.45}
+.personal-actions{display:flex;gap:12px}
+.personal-actions button{padding:0;border:0;background:none;color:var(--green);font-size:12px;font-weight:750;min-height:36px;text-decoration:underline}
+#personalStatus:empty{display:none}
 footer{display:flex;align-items:center;gap:6px;margin-top:17px;color:var(--muted);font-size:11px}
 footer svg{width:14px!important;height:14px!important}
 footer button{margin-left:auto;min-height:40px;color:#265842;border:0;background:none;font-size:11px;font-weight:800;text-decoration:underline}
@@ -141,6 +148,7 @@ dialog::backdrop{background:#0c291eb0}
 #toast{position:fixed;z-index:6;bottom:calc(97px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);border-radius:12px;background:#1a4638;color:white;padding:9px 13px;font-size:13px;box-shadow:0 6px 20px #13372e50}
 .workspace{grid-template-areas:"hero" "count" "details" "actions"}
 @media(max-width:359px){
+ .cash-mark.bill{width:24px;font-size:8px}.denom{gap:4px}
  .shell{width:calc(100% - 22px)}.account #accountLabel{display:none}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
 }
 @media(min-width:680px){
@@ -154,7 +162,5 @@ dialog::backdrop{background:#0c291eb0}
 }
 @media(min-width:1000px){
  .workspace{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:19px}.hero{padding:24px 22px 17px}.hero-art{width:232px;right:-14px;top:-6px}.hero-stats{max-width:75%}.denom-labels,.denom-row{padding-inline:20px;grid-template-columns:1fr 146px 1fr}.quantity{grid-template-columns:44px minmax(0,1fr) 44px}.panel-heading{padding:18px}.fields{padding-inline:18px}
- .denom.with-bill{flex-direction:row;align-items:center;gap:9px}
- .currency-thumb.bill{width:92px;height:43px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}

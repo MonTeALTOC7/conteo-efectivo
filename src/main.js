@@ -1,6 +1,6 @@
 import './style.css';
 import { asDraft, asRecord, denominations, emptyDraft, legacyDraft, legacyId, MAX_PNG, MAX_QUANTITY, money, normalized, parseExpected, quantity, receiptName, showDate, summarize, today } from './model.js';
-import { currencyImageUrl } from './currency-art.js';
+import './personal-card.js';
 import { createPdf, createPng } from './receipt.js';
 import { adoptGuest, changeLocal, importLocal, listLocal, mergeRemote, readDraft, writeDraft } from './store.js';
 import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, fetchPng, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
@@ -148,22 +148,11 @@ const billKinds = denominations.filter(item => item.kind === 'bill').length;
 for (const denom of denominations) {
   const row = dom('div', '', 'denom-row');
   const label = dom('div', '', 'denom');
-  const url = currencyImageUrl(denom.id);
-  if (url) {
-    const image = dom('img', '', 'currency-thumb ' + denom.kind);
-    image.src = url;
-    image.alt = '';
-    image.decoding = 'async';
-    if (denom.kind === 'bill') label.classList.add('with-bill');
-    label.append(image);
-  } else {
-    const mark = dom('span', String(denom.mark), 'note coin');
-    mark.style.setProperty('--tone', denom.tone[0]);
-    mark.style.setProperty('--tint', denom.tone[1]);
-    mark.setAttribute('aria-hidden', 'true');
-    label.append(mark);
-  }
-  label.append(denom.label);
+  const mark = dom('span', String(denom.mark), 'cash-mark ' + denom.kind);
+  mark.style.setProperty('--tone', denom.tone[0]);
+  mark.style.setProperty('--tint', denom.tone[1]);
+  mark.setAttribute('aria-hidden', 'true');
+  label.append(mark, denom.label);
   const qty = dom('div', '', 'quantity');
   const name = (denom.kind === 'bill' ? 'billetes de ' : 'monedas de ') + denom.label;
   const input = dom('input');
