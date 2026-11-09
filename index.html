@@ -72,6 +72,15 @@
             </div>
           </div>
         </section>
+        <aside class="personal-card" aria-labelledby="personalCardTitle">
+          <img id="personalPortrait" alt="Carlos José vestido de doctor" hidden>
+          <span class="personal-icon" data-icon="image" aria-hidden="true"></span>
+          <div><strong id="personalCardTitle">Carlos José</strong><p>Nuestro pequeño doctor.</p>
+            <div class="personal-actions"><button id="personalChoose" type="button">Agregar foto</button><button id="personalRemove" type="button" hidden>Quitar foto</button></div>
+            <p id="personalStatus" role="status"></p>
+          </div>
+          <input id="personalFile" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Foto de Carlos José" hidden>
+        </aside>
         <section class="panel counting" aria-labelledby="billsTitle">
           <div class="panel-heading"><span class="panel-icon" data-icon="bills"></span><div><h2 id="billsTitle">Billetes</h2><p>Identificá el billete e ingresá la cantidad</p></div><span class="pill" id="activeBills">0 de 8</span></div>
           <div class="denom-labels"><span>Denominación</span><span>Cantidad</span><span>Subtotal</span></div>
@@ -115,15 +124,6 @@
         <div id="historyList" class="history-list"></div>
       </div>
     </section>
-    <aside class="personal-card" aria-labelledby="personalCardTitle">
-      <img id="personalPortrait" alt="Carlos José vestido de doctor" hidden>
-      <span class="personal-icon" data-icon="image" aria-hidden="true"></span>
-      <div><strong id="personalCardTitle">Carlos José</strong><p>Tu toque personal en este dispositivo.</p>
-        <div class="personal-actions"><button id="personalChoose" type="button">Agregar foto</button><button id="personalRemove" type="button" hidden>Quitar foto</button></div>
-        <p id="personalStatus" role="status"></p>
-      </div>
-      <input id="personalFile" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Foto de Carlos José" hidden>
-    </aside>
     <footer><span data-icon="shield"></span><span>PWA independiente · Conteos privados por cuenta</span><button type="button" id="install">Instalar app</button></footer>
   </main>
   <dialog id="sheet" aria-labelledby="sheetTitle">

@@ -35,8 +35,11 @@ test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', asy
   await waitReady(page);
   await expect(page.locator('#total')).toHaveText('C$ 0.00');
   await expect(page.getByText('By Carlos Tijerino')).toBeVisible();
-  await expect(page.locator('#bills .cash-mark')).toHaveCount(8);
-  await expect(page.locator('#bills img')).toHaveCount(0);
+  const portrait = page.getByRole('img', { name: 'Carlos José vestido de doctor' });
+  await expect(portrait).toBeVisible();
+  await expect.poll(() => portrait.evaluate(img => img.naturalWidth > 0)).toBe(true);
+  await expect(page.locator('#bills .currency-thumb')).toHaveCount(8);
+  await expect.poll(() => page.locator('#bills .currency-thumb').evaluateAll(images => images.every(img => img.naturalWidth === 300))).toBe(true);
   await label(page, 'b1000').fill('2.5');
   await expect(page.locator('#total')).toHaveText('C$ 0.00');
   await label(page, 'b1000').fill('2');
@@ -62,7 +65,7 @@ test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', asy
   await expect(page.locator('#countName')).toHaveValue('Banpro · Noviembre');
   await expect(page.locator('#total')).toHaveText('C$ 2,510.80');
   await expect(label(page, 'm25')).toHaveValue('3');
-  await expect(page.locator('#bills img')).toHaveCount(0);
+  await expect.poll(() => page.locator('#bills .currency-thumb').evaluateAll(images => images.every(img => img.naturalWidth === 300))).toBe(true);
   await page.getByRole('button', { name: 'Guardar conteo', exact: true }).click();
   await expect(page.locator('#draftStatus')).toHaveText('Guardado en el dispositivo');
   await page.getByRole('button', { name: 'Ver PNG' }).click();

@@ -1,4 +1,5 @@
 import { MAX_PNG, money, quantity, showDate, summarize } from './model.js';
+import { loadCurrencyImages } from './currency-art.js';
 
 const width = 960;
 const pad = 49;
@@ -51,7 +52,7 @@ function section(ctx, label, lines, y, size) {
   return y - 1;
 }
 
-function draw(record, totals, scale) {
+function draw(record, totals, images, scale) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   const title = wrap(ctx, record.name, inner, 40, 700);
@@ -121,14 +122,17 @@ function draw(record, totals, scale) {
   y += 73;
   for (const [index, row] of totals.rows.entries()) {
     if (index % 2) box(ctx, pad, y, inner, rowHeight, 0, '#f8faf8');
-    const coin = row.kind === 'coin';
-    const chip = coin ? 46 : 76;
-    const chipX = pad + 67 - chip / 2;
-    box(ctx, chipX, y + 15, chip, 46, coin ? 23 : 12, row.tone[1]);
-    if (!coin) box(ctx, chipX + 7, y + 25, 4, 26, 2, row.tone[0]);
-    text(ctx, String(row.mark), pad + 67, y + 45, { size: 21, weight: 700, align:'center', color: row.tone[0] });
-    text(ctx, row.label, pad + 123, y + 33, { size: 25, weight: 700 });
-    text(ctx, row.kind === 'bill' ? 'Billete' : 'Moneda', pad + 123, y + 54, { size: 16, color: colors.muted });
+    const photo = images.get(row.id);
+    if (photo) {
+      const ratio = Math.min(128 / photo.naturalWidth, 59 / photo.naturalHeight);
+      const w = photo.naturalWidth * ratio, h = photo.naturalHeight * ratio;
+      ctx.drawImage(photo, pad + 16 + (128 - w) / 2, y + (rowHeight - h) / 2, w, h);
+    } else {
+      box(ctx, pad + 54, y + 11, 54, 54, 27, row.tone[1]);
+      text(ctx, String(row.mark), pad + 81, y + 45, { size: 20, weight: 700, align:'center', color: row.tone[0] });
+    }
+    text(ctx, row.label, pad + 162, y + 33, { size: 25, weight: 700 });
+    text(ctx, row.kind === 'bill' ? 'Billete' : 'Moneda', pad + 162, y + 54, { size: 16, color: colors.muted });
     text(ctx, quantity(row.count), 583, y + 46, { size: 23, align:'right' });
     text(ctx, money(row.subtotal), width-pad-16, y + 46, { size: 23, weight: 700, align:'right' });
     ctx.fillStyle = colors.rule;
@@ -146,8 +150,9 @@ const blobFromCanvas = (canvas, type, quality) => new Promise((resolve, reject) 
 });
 export async function createPng(record) {
   const totals = summarize(record.counts);
+  const images = await loadCurrencyImages(totals.rows);
   for (const scale of [1, .9, .78, .67]) {
-    const blob = await blobFromCanvas(draw(record, totals, scale), 'image/png');
+    const blob = await blobFromCanvas(draw(record, totals, images, scale), 'image/png');
     if (blob.size <= MAX_PNG) return blob;
   }
   throw new Error('La imagen excede el tamaño de sincronización. Acortá las notas e intentá de nuevo.');

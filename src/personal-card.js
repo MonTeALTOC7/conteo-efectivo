@@ -1,3 +1,5 @@
+import defaultPortrait from './assets/carlos-jose.webp';
+
 const key = 'conteo-efectivo:personal-portrait';
 const portrait = document.getElementById('personalPortrait');
 const fileInput = document.getElementById('personalFile');
@@ -13,7 +15,10 @@ function show(src) {
   remove.hidden = !src;
 }
 
-try { show(localStorage.getItem(key)); } catch { show(null); }
+try {
+  const preference = localStorage.getItem(key);
+  show(preference === '' ? null : preference || defaultPortrait);
+} catch { show(defaultPortrait); }
 choose.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', async () => {
   const [file] = fileInput.files;
@@ -44,7 +49,7 @@ fileInput.addEventListener('change', async () => {
 });
 remove.addEventListener('click', () => {
   try {
-    localStorage.removeItem(key);
+    localStorage.setItem(key, '');
     show(null);
     status.textContent = 'Foto retirada.';
   } catch {
