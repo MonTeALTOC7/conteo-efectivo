@@ -32,23 +32,26 @@ La versión local sin configuración funciona con almacenamiento del dispositivo
 
 ## Activación del plan gratuito
 
-1. Creá un proyecto Firebase dedicado en **Spark**. En Authentication, habilitá el proveedor Google y agregá `montealtoc7.github.io` como dominio autorizado. En Firestore, creá una base **Standard**, en modo de producción. Registrá una aplicación Web en el mismo proyecto.
-2. Publicá las reglas e índices de este repositorio en ese proyecto. Usá el CLI oficial con tu sesión y especificá el ID del proyecto:
+1. Creá un proyecto Firebase dedicado en **Spark**. En Authentication, habilitá el proveedor Google. En Firestore, creá una base **Standard** en modo de producción. Registrá una aplicación Web en el mismo proyecto.
+2. Copiá los cuatro campos del SDK Web indicados en `.env.example` a `.env.local`. Usá el `authDomain` asignado por Firebase y mantené el mismo ID de proyecto para Hosting, Auth y Firestore.
+3. Tras aprobar e integrar el PR, ejecutá desde `main`:
 
    ```bash
+   npm ci
+   npm test
+   npm run build:release
    npx firebase-tools@15.35.0 login
    npx firebase-tools@15.35.0 deploy --only firestore:rules,firestore:indexes --project ID_DEL_PROYECTO
+   npx firebase-tools@15.35.0 deploy --only hosting --project ID_DEL_PROYECTO
    ```
 
-3. Copiá los cuatro campos públicos del SDK Web de Firebase a las variables de Actions indicadas en `.env.example`. Para una validación local, podés usar `.env.local`.
-4. Tras aprobar e integrar el PR, seleccioná **GitHub Actions** en Settings → Pages. Ejecutá manualmente **Publicar en GitHub Pages** desde `main`. El flujo exige la configuración de Firebase antes de publicar.
-5. En el enlace publicado, probá con dos sesiones y con Chrome en un Android físico. Comprobá instalación, inicio de sesión, recuperación del PNG y compartir en WhatsApp.
+4. Usá el enlace HTTPS `ID_DEL_PROYECTO.firebaseapp.com` que corresponde al `authDomain`. Probá dos sesiones y Chrome en un Android físico. Comprobá instalación, inicio de sesión, recuperación del PNG y compartir en WhatsApp.
 
-El repositorio contiene código. Los datos privados se almacenan bajo el identificador de cada usuario en Firestore. Conservá el plan Spark y el origen HTTPS de la app. El límite de almacenamiento gratuito del proyecto es de 1 GiB.
+El código vive en GitHub y la PWA usa el dominio gratuito y exclusivo del proyecto Firebase. El origen exclusivo separa el almacenamiento del navegador de otras apps en `montealtoc7.github.io`. Los datos privados se guardan bajo el identificador de cada usuario en Firestore. Conservá el plan Spark. El límite de almacenamiento gratuito de Firestore es de 1 GiB.
 
 ## Datos y sincronización
 
-IndexedDB guarda el borrador y la cola por cuenta. La confirmación de Firestore cambia el estado a **Guardado en la nube**. Un ID de mutación permite repetir un envío sin duplicarlo. Las reglas exigen propietario, importes consistentes, revisión consecutiva y que el registro y el PNG de hasta 450 KiB se escriban juntos. La eliminación conserva una marca mínima de revisión y quita el archivo. Cada PNG remoto se solicita al abrirlo y se conserva en el dispositivo tras la primera consulta.
+El borrador se escribe en el dispositivo en cada cambio. IndexedDB guarda los conteos, imágenes y cola de sincronización por cuenta. La confirmación de Firestore cambia el estado a **Guardado en la nube**. Un ID de mutación permite repetir un envío sin duplicarlo. Las reglas exigen propietario, importes consistentes, revisión consecutiva y que el registro y el PNG de hasta 450 KiB se escriban juntos. La eliminación conserva una marca mínima de revisión y quita el archivo. Cada PNG remoto se solicita al abrirlo y se conserva en el dispositivo tras la primera consulta.
 
 Denominaciones de referencia del Banco Central de Nicaragua.
 

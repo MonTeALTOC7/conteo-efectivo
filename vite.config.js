@@ -1,4 +1,13 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+
+function requireReleaseConfig(_, { mode }) {
+  if (mode !== 'release') return;
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  const required = ['API_KEY', 'AUTH_DOMAIN', 'PROJECT_ID', 'APP_ID'];
+  const missing = required.filter(key => !env['VITE_FIREBASE_' + key]?.trim());
+  if (missing.length) throw new Error('Configurá Firebase antes de publicar: ' + missing.join(', '));
+  if (env.VITE_USE_FIREBASE_EMULATOR === '1') throw new Error('Desactivá el emulador antes de publicar.');
+}
 
 export default defineConfig({
   base: './',
@@ -15,7 +24,7 @@ export default defineConfig({
       }
     }
   },
-  plugins: [{
+  plugins: [{ name: 'firebase-release-config', config: requireReleaseConfig }, {
     name: 'offline-shell',
     apply: 'build',
     generateBundle(_, bundle) {

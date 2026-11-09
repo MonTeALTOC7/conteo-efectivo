@@ -83,6 +83,24 @@ test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', asy
   await context.close();
 });
 
+test('conserva la última cantidad si se recarga inmediatamente sin conexión', async ({browser}) => {
+  const context = await browser.newContext(phone);
+  const page = await context.newPage();
+  await page.goto(route);
+  await waitReady(page);
+  await context.setOffline(true);
+  const navigated = page.waitForEvent('framenavigated');
+  await page.evaluate(() => {
+    const last = document.querySelector('[data-denom="m25"]');
+    last.value = '3';
+    last.dispatchEvent(new Event('input', {bubbles:true}));
+    location.reload();
+  });
+  await navigated;
+  await expect(page.locator('#total')).toHaveText('C$ 0.75');
+  await context.close();
+});
+
 test('respaldo anterior: importa sin duplicar y conserva notas', async ({page}) => {
   await page.goto(route);
   await waitReady(page);

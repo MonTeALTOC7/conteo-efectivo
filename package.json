@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
-    "test:firebase": "npm exec --yes --package firebase-tools@15.35.0 -- firebase emulators:exec --only auth,firestore --project demo-conteo-efectivo \"npm run test:e2e\""
+    "test:firebase": "npm exec --yes --package firebase-tools@15.35.0 -- firebase emulators:exec --only auth,firestore --project demo-conteo-efectivo \"npm run test:e2e\"",
+    "build:release": "vite build --mode release"
   },
   "dependencies": {
     "firebase": "13.2.0"

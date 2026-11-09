@@ -19,8 +19,24 @@ async function access(name, mode, operation) {
   });
 }
 const key = (profile, id) => profile + ':' + id;
-export const readDraft = profile => access('drafts', 'readonly', store => store.get(profile));
-export const writeDraft = (profile, draft) => access('drafts', 'readwrite', store => store.put(draft, profile));
+const journalKey = profile => 'conteo-efectivo:draft:' + profile;
+export async function readDraft(profile) {
+  try {
+    const saved = localStorage.getItem(journalKey(profile));
+    if (saved !== null) return JSON.parse(saved);
+  } catch {
+    // An older draft or a restricted storage session can still use IndexedDB.
+  }
+  return access('drafts', 'readonly', store => store.get(profile));
+}
+export async function writeDraft(profile, draft) {
+  try {
+    localStorage.setItem(journalKey(profile), JSON.stringify(draft));
+  } catch {
+    try { localStorage.removeItem(journalKey(profile)); } catch { /* storage blocked */ }
+    await access('drafts', 'readwrite', store => store.put(draft, profile));
+  }
+}
 export const listLocal = profile => access('records', 'readonly', store => store.index('profile').getAll(profile));
 
 export async function changeLocal(profile, id, transform) {
@@ -74,37 +90,25 @@ export async function mergeRemote(profile, records) {
   });
 }
 export async function adoptGuest(profile) {
-  const db = await database;
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(['records', 'drafts'], 'readwrite');
-    const records = tx.objectStore('records');
-    const drafts = tx.objectStore('drafts');
-    const guest = records.index('profile').getAll('guest');
+  await access('records', 'readwrite', store => {
+    const guest = store.index('profile').getAll('guest');
     guest.onsuccess = () => {
       for (const entry of guest.result) {
         const id = key(profile, entry.record.id);
-        const existing = records.get(id);
+        const existing = store.get(id);
         existing.onsuccess = () => {
           if (!existing.result) {
-            records.put({ ...entry, key: id, profile, status: 'pending' });
-            records.delete(entry.key);
+            store.put({ ...entry, key: id, profile, status: 'pending' });
+            store.delete(entry.key);
           }
         };
       }
     };
-    const existingDraft = drafts.get(profile);
-    existingDraft.onsuccess = () => {
-      if (existingDraft.result) return;
-      const guestDraft = drafts.get('guest');
-      guestDraft.onsuccess = () => {
-        if (guestDraft.result) {
-          drafts.put(guestDraft.result, profile);
-          drafts.delete('guest');
-        }
-      };
-    };
-    tx.oncomplete = () => resolve();
-    tx.onabort = () => reject(tx.error || new Error('Se interrumpió la vinculación.'));
-    tx.onerror = () => reject(tx.error);
   });
+  if (await readDraft(profile)) return;
+  const guestDraft = await readDraft('guest');
+  if (!guestDraft) return;
+  await writeDraft(profile, guestDraft);
+  try { localStorage.removeItem(journalKey('guest')); } catch { /* storage blocked */ }
+  await access('drafts', 'readwrite', store => store.delete('guest'));
 }
