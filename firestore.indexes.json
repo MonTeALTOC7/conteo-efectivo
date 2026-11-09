@@ -1,0 +1,8 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {"collectionGroup":"images","fieldPath":"png","indexes":[]},
+    {"collectionGroup":"counts","fieldPath":"notes","indexes":[]},
+    {"collectionGroup":"counts","fieldPath":"counts","indexes":[]}
+  ]
+}
