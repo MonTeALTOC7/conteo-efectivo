@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function countPath(uid, id) {
+      return /databases/$(database)/documents/users/$(uid)/counts/$(id);
+    }
+    function imagePath(uid, id) {
+      return /databases/$(database)/documents/users/$(uid)/images/$(id);
+    }
+    function quantity(data, key) {
+      return data.get(key, 0);
+    }
+    function validQuantity(data, key) {
+      return quantity(data, key) is int && quantity(data, key) >= 0 && quantity(data, key) <= 999999;
+    }
+    function validCounts(data) {
+      return data is map &&
+        data.keys().hasOnly(['b1000','b500','b200','b100','b50','b20','b10','b5','m1000','m500','m100','m50','m25','m10','m5']) &&
+        validQuantity(data,'b1000') && validQuantity(data,'b500') && validQuantity(data,'b200') &&
+        validQuantity(data,'b100') && validQuantity(data,'b50') && validQuantity(data,'b20') &&
+        validQuantity(data,'b10') && validQuantity(data,'b5') && validQuantity(data,'m1000') && validQuantity(data,'m500') &&
+        validQuantity(data,'m100') && validQuantity(data,'m50') && validQuantity(data,'m25') &&
+        validQuantity(data,'m10') && validQuantity(data,'m5');
+    }
+    function total(data) {
+      return quantity(data,'b1000')*100000 + quantity(data,'b500')*50000 + quantity(data,'b200')*20000 +
+        quantity(data,'b100')*10000 + quantity(data,'b50')*5000 + quantity(data,'b20')*2000 +
+        quantity(data,'b10')*1000 + quantity(data,'b5')*500 + quantity(data,'m1000')*1000 + quantity(data,'m500')*500 +
+        quantity(data,'m100')*100 + quantity(data,'m50')*50 + quantity(data,'m25')*25 +
+        quantity(data,'m10')*10 + quantity(data,'m5')*5;
+    }
+    function validCore(data, id) {
+      return data.id == id && id.matches('^[a-f0-9-]{36}$|^legacy-[a-f0-9]{32}$') &&
+        data.revision is int && data.revision >= 1 &&
+        data.mutation is string && data.mutation.matches('^[a-f0-9-]{36}$') &&
+        data.updatedAt is string && data.updatedAt.size() == 24;
+    }
+    function validRecord(data, id) {
+      return validCore(data, id) &&
+        data.keys().hasOnly(['id','name','destination','notes','date','expectedCents','counts','total','updatedAt','revision','mutation','deleted']) &&
+        data.deleted == false &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.destination is string && data.destination.size() <= 120 &&
+        data.notes is string && data.notes.size() <= 1000 &&
+        data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        (data.expectedCents == null || (data.expectedCents is int && data.expectedCents >= 0 && data.expectedCents <= 1000000000000)) &&
+        validCounts(data.counts) && data.total is int && data.total > 0 && data.total == total(data.counts);
+    }
+    function matchingImage(uid, id, data) {
+      let image = getAfter(imagePath(uid,id)).data;
+      return image.revision == data.revision && image.mutation == data.mutation;
+    }
+    function validTombstone(data, uid, id) {
+      return validCore(data,id) && data.deleted == true &&
+        data.keys().hasOnly(['id','revision','mutation','updatedAt','deleted']) && !existsAfter(imagePath(uid,id));
+    }
+    match /users/{uid}/counts/{id} {
+      allow get, list: if owner(uid);
+      allow create: if owner(uid) && request.resource.data.revision == 1 &&
+        validRecord(request.resource.data,id) && matchingImage(uid,id,request.resource.data);
+      allow update: if owner(uid) && resource.data.deleted == false &&
+        request.resource.data.revision == resource.data.revision + 1 &&
+        ((validRecord(request.resource.data,id) && matchingImage(uid,id,request.resource.data)) ||
+          validTombstone(request.resource.data,uid,id));
+    }
+    match /users/{uid}/images/{id} {
+      allow get: if owner(uid);
+      allow create, update: if owner(uid) && validImage(request.resource.data,uid,id);
+      allow delete: if owner(uid) && getAfter(countPath(uid,id)).data.deleted == true;
+    }
+    function validImage(image, uid, id) {
+      let count = getAfter(countPath(uid,id)).data;
+      return image.keys().hasOnly(['revision','mutation','png']) &&
+        image.png is bytes && image.png.size() > 0 && image.png.size() <= 460800 &&
+        count.deleted == false && count.revision == image.revision && count.mutation == image.mutation &&
+        (!exists(countPath(uid,id)) || get(countPath(uid,id)).data.mutation != image.mutation);
+    }
+  }
+}
