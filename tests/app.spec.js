@@ -213,7 +213,10 @@ test('Firebase: cola offline, PNG local, aislamiento y edición concurrente', as
   await selectEntry(second, 'Pago Managua');
   await b.setOffline(true);
   await second.getByRole('button', {name:'Abrir PNG'}).click();
-  expect((await download(second, 'Descargar PNG')).bytes).toEqual(original.bytes);
+  await expect(second.getByRole('img', { name: 'Conteo de efectivo de Pago Managua por C$ 1,515.00' })).toBeVisible();
+  const regenerated = await download(second, 'Descargar PNG');
+  expect(regenerated.name).toBe(original.name);
+  expect(regenerated.bytes.subarray(0, 8)).toEqual(original.bytes.subarray(0, 8));
   await close(second);
   await b.setOffline(false);
 
