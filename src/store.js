@@ -82,7 +82,6 @@ export async function mergeRemote(profile, records) {
         if (local && local.record.revision > record.revision) return;
         store.put({
           key: id, profile, record,
-          png: local?.record.mutation === record.mutation ? local.png : null,
           status: 'synced', baseRevision: record.revision
         });
       };

@@ -1,10 +1,10 @@
 import './style.css';
-import { asDraft, asRecord, denominations, emptyDraft, legacyDraft, legacyId, MAX_PNG, MAX_QUANTITY, money, normalized, parseExpected, quantity, receiptName, showDate, summarize, today } from './model.js';
+import { asDraft, asRecord, denominations, emptyDraft, legacyDraft, legacyId, MAX_QUANTITY, money, normalized, parseExpected, quantity, receiptName, showDate, summarize, today } from './model.js';
 import { currencyImageUrl } from './currency-art.js';
 import './personal-card.js';
 import { createPdf, createPng } from './receipt.js';
 import { adoptGuest, changeLocal, importLocal, listLocal, mergeRemote, readDraft, writeDraft } from './store.js';
-import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, fetchPng, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
+import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
 
 const icons = {
   wallet:'<rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 9V7a2 2 0 0 1 2-2l11-3M21 11h-5a2 2 0 1 0 0 4h5m-4-2h.01"/>',
@@ -55,6 +55,7 @@ let editingMutation = null;
 let savedDraft = '';
 const accountChanges = [];
 const BACKUP_LIMIT = 64 * 1024 * 1024;
+const BACKUP_RECORD_LIMIT = 10000;
 let applyingAccount = false;
 
 function warn(message) {
@@ -331,9 +332,9 @@ async function refreshLocal(expectedProfile = profile) {
   renderStatus();
   if (view === 'history') renderHistory();
 }
-function newEntry(record, png, baseRevision = 0, owner = profile) {
+function newEntry(record, baseRevision = 0, owner = profile) {
   return { record: { ...record, revision: baseRevision + 1, mutation: crypto.randomUUID(), deleted: Boolean(record.deleted) },
-    png, baseRevision, status: owner === 'guest' ? 'local' : 'pending' };
+    baseRevision, status: owner === 'guest' ? 'local' : 'pending' };
 }
 async function saveCount() {
   if (saving) return;
@@ -346,13 +347,11 @@ async function saveCount() {
   saving = true;
   renderSummary();
   try {
-    const png = await createPng(record);
-    if (owner !== profile) return;
     let committed;
     await changeLocal(owner, record.id, previous => {
       if (previous && (previous.record.mutation !== baseMutation || previous.status === 'conflict' || previous.record.deleted)) return;
       const base = previous?.status === 'synced' ? previous.record.revision : previous?.baseRevision || 0;
-      committed = newEntry(record, png, base, owner);
+      committed = newEntry(record, base, owner);
       return committed;
     });
     if (!committed) {
@@ -367,7 +366,7 @@ async function saveCount() {
       storeDraft();
     }
     await refreshLocal(owner);
-    toast(owner === 'guest' ? 'Conteo y PNG guardados en el teléfono.' : 'Conteo y PNG guardados. Revisá el estado de sincronización.');
+    toast(owner === 'guest' ? 'Conteo guardado en el teléfono.' : 'Conteo guardado. Revisá el estado de sincronización.');
     sync();
   } catch (error) {
     toast(error.message || 'No se pudo guardar el conteo.');
@@ -378,22 +377,11 @@ async function saveCount() {
 }
 $('save').onclick = saveCount;
 
-async function getPng(entry) {
-  const { record } = entry;
-  if (entry.png) return entry.png;
-  if (!user || !navigator.onLine) throw new Error('Conectate para abrir este PNG por primera vez en el dispositivo.');
-  const owner = profile;
-  const png = await fetchPng(user.uid, record.id, record.mutation);
-  if (owner !== profile) throw new Error('La cuenta cambió. Abrí el conteo nuevamente.');
-  await changeLocal(owner, record.id, latest => latest?.record.mutation === record.mutation ? { ...latest, png } : undefined);
-  return png;
-}
-function showReceipt(record, imagePromise, original = false) {
+function showReceipt(record) {
   const body = showSheet('COMPROBANTE', 'PNG del conteo');
   const version = sheetVersion;
-  const redesign = original ? [button('Diseño actual', () => showReceipt(record, createPng(record)))] : [];
   body.append(dom('p', 'Preparando la imagen…'));
-  Promise.resolve(imagePromise).then(png => {
+  createPng(record).then(png => {
     if (version !== sheetVersion) return;
     const pngName = receiptName(record);
     const file = new File([png], pngName, { type: 'image/png' });
@@ -420,20 +408,16 @@ function showReceipt(record, imagePromise, original = false) {
       catch { receiptStatus.textContent = 'No se pudo crear el PDF. El PNG sigue disponible.'; }
       finally { pdf.disabled = false; }
     });
-    body.replaceChildren(sheetButtons(button('Descargar PNG', () => download(png, pngName), 'primary', 'download'), share, pdf, ...redesign),
+    body.replaceChildren(sheetButtons(button('Descargar PNG', () => download(png, pngName), 'primary', 'download'), share, pdf),
       receiptStatus, image);
   }).catch(error => {
-    if (version === sheetVersion) body.replaceChildren(dom('p', error.message || 'No se pudo abrir el PNG.'), ...redesign);
+    if (version === sheetVersion) body.replaceChildren(dom('p', error.message || 'No se pudo generar el PNG.'));
   });
 }
 $('preview').onclick = () => {
   try {
     const existing = savedDraft === JSON.stringify(draft) && records.find(entry => entry.record.id === draft.id);
-    if (existing) showReceipt(existing.record, getPng(existing), true);
-    else {
-      const record = asRecord(draft);
-      showReceipt(record, createPng(record));
-    }
+    showReceipt(existing ? existing.record : asRecord(draft));
   } catch (error) { toast(error.message); }
 };
 
@@ -455,7 +439,7 @@ function showHistoryEntry(entry) {
     replaceDraft(asDraft(record), entry);
     setView('count');
   };
-  body.append(sheetButtons(button('Abrir PNG', () => showReceipt(record, getPng(entry), true), 'primary', 'image'),
+  body.append(sheetButtons(button('Abrir PNG', () => showReceipt(record), 'primary', 'image'),
     button('Editar', () => {
       if (hasChanges()) confirmSheet('Abrir conteo guardado', 'Se reemplazará el borrador actual.', edit, 'Abrir');
       else edit();
@@ -467,7 +451,7 @@ async function deleteRecord(entry) {
     await changeLocal(owner, entry.record.id, previous => {
       if (previous?.record.mutation !== entry.record.mutation) return;
       if (owner === 'guest') return null;
-      return { ...newEntry({ id: entry.record.id, updatedAt: new Date().toISOString(), deleted: true }, null,
+      return { ...newEntry({ id: entry.record.id, updatedAt: new Date().toISOString(), deleted: true },
         previous.status === 'synced' ? previous.record.revision : previous.baseRevision, owner), previousMutation: previous.record.mutation };
     });
     if (owner !== profile) return;
@@ -484,12 +468,11 @@ async function resolveConflict(entry, keepCopy) {
   try {
     if (keepCopy) {
       const record = asRecord({ ...asDraft(entry.record), id: null });
-      const png = await createPng(record);
       if (profile !== owner) return;
-      await changeLocal(owner, record.id, () => newEntry(record, png, 0, owner));
+      await changeLocal(owner, record.id, () => newEntry(record, 0, owner));
     }
     await changeLocal(owner, entry.record.id, latest => latest?.record.mutation === entry.record.mutation
-      ? { record: current, png: null, status: 'synced', baseRevision: current.revision } : undefined);
+      ? { record: current, status: 'synced', baseRevision: current.revision } : undefined);
     if (owner !== profile) return;
     if (draft.id === entry.record.id) replaceDraft(emptyDraft());
     await refreshLocal(owner);
@@ -506,7 +489,7 @@ async function uploadPending(owner, account, session) {
       const result = await push(account.uid, entry);
       await changeLocal(owner, entry.record.id, latest => {
         if (latest?.record.mutation === entry.record.mutation) {
-          return result ? { ...latest, record: result, status: 'synced', baseRevision: result.revision } : null;
+          return result ? { record: result, status: 'synced', baseRevision: result.revision } : null;
         }
         if (result && latest?.status === 'pending' && latest.baseRevision === entry.baseRevision) {
           return { ...latest, baseRevision: result.revision, record: { ...latest.record, revision: result.revision + 1 } };
@@ -591,7 +574,7 @@ function queueAccount(next) {
 $('account').onclick = () => {
   const body = showSheet('SINCRONIZACIÓN', user ? 'Tu cuenta de Google' : 'Guardado en la nube');
   if (user) {
-    body.append(dom('p', user.email || 'Cuenta conectada'), dom('p', 'Los conteos y PNG se sincronizan al guardar. Si perdés la señal, la app reintenta al recuperar conexión.'));
+    body.append(dom('p', user.email || 'Cuenta conectada'), dom('p', 'Los datos de los conteos se sincronizan al guardar. Si perdés la señal, la app reintenta al recuperar conexión.'));
     body.append(sheetButtons(button('Sincronizar ahora', () => {
       retryAt = 0;
       sync();
@@ -599,7 +582,7 @@ $('account').onclick = () => {
       toast(navigator.onLine ? 'Revisando cambios pendientes.' : 'Sin conexión. Se sincronizará al volver.');
     }, 'primary'), button('Cerrar sesión', () => disconnectAccount().catch(() => toast('No se pudo cerrar la sesión.')))));
   } else if (configured) {
-    body.append(dom('p', 'Conectá tu cuenta para recuperar el historial y los PNG en otro teléfono. Los conteos locales se vincularán a esa cuenta.'));
+    body.append(dom('p', 'Conectá tu cuenta para recuperar el historial en otro teléfono. Los conteos locales se vincularán a esa cuenta.'));
     const start = button('Continuar con Google', () => {
       start.disabled = true;
       connectAccount().catch(error => {
@@ -631,29 +614,26 @@ async function backup(query) {
   const owner = profile;
   const entries = (await listLocal(owner)).filter(entry => !entry.record.deleted && matchesHistory(entry.record, query));
   if (!entries.length) throw new Error('No hay conteos para respaldar con esta búsqueda.');
+  if (entries.length > BACKUP_RECORD_LIMIT) throw new Error('El respaldo supera 10,000 conteos. Buscá por año o mes y descargalo por partes.');
   const items = [];
   let size = 100;
   for (const entry of entries) {
     if (owner !== profile) throw new Error('La cuenta cambió.');
-    const png = await getPng(entry);
-    const bytes = new Uint8Array(await png.arrayBuffer());
-    let binary = '';
-    for (let start = 0; start < bytes.length; start += 8192) binary += String.fromCharCode(...bytes.subarray(start, start + 8192));
     const record = entry.record;
-    const item = { ...asDraft(record), updatedAt: record.updatedAt, png: btoa(binary) };
+    const item = { ...asDraft(record), updatedAt: record.updatedAt };
     size += new Blob([JSON.stringify(item)]).size + 1;
     if (size > BACKUP_LIMIT) throw new Error('El respaldo supera 64 MB. Buscá por año o mes, por ejemplo 2026-11, y descargalo por partes.');
     items.push(item);
   }
   if (owner !== profile) throw new Error('La cuenta cambió.');
-  download(new Blob([JSON.stringify({ app: 'conteo-efectivo', version: 2, records: items })], { type: 'application/json' }), 'conteos_' + today() + '.json');
+  download(new Blob([JSON.stringify({ app: 'conteo-efectivo', version: 3, records: items })], { type: 'application/json' }), 'conteos_' + today() + '.json');
 }
 async function restore(file) {
   if (!file || file.size > BACKUP_LIMIT) throw new Error('Usá un respaldo JSON de hasta 64 MB.');
   const data = JSON.parse(await file.text());
   const legacy = data.app === 'mi-conteo-nio' && data.version === 1;
-  if ((!legacy && !(data.app === 'conteo-efectivo' && data.version === 2)) ||
-    !Array.isArray(data.records) || data.records.length > 10000) throw new Error('El archivo no es un respaldo válido.');
+  if ((!legacy && !(data.app === 'conteo-efectivo' && [2, 3].includes(data.version))) ||
+    !Array.isArray(data.records) || data.records.length > BACKUP_RECORD_LIMIT) throw new Error('El archivo no es un respaldo válido.');
   const owner = profile;
   const prepared = [];
   for (const item of data.records) {
@@ -665,19 +645,7 @@ async function restore(file) {
       throw new Error('El respaldo contiene un registro inválido.');
     }
     const record = asRecord(input, new Date(item.updatedAt).toISOString());
-    let png;
-    if (legacy) png = await createPng(record);
-    else {
-      if (typeof item.png !== 'string' || item.png.length > Math.ceil(MAX_PNG / 3) * 4) throw new Error('El respaldo contiene un PNG inválido.');
-      const bytes = Uint8Array.from(atob(item.png), byte => byte.charCodeAt(0));
-      if (bytes.length < 33 || bytes.length > MAX_PNG || ![137,80,78,71,13,10,26,10].every((value, index) => bytes[index] === value)) throw new Error('El respaldo contiene un PNG inválido.');
-      const header = new DataView(bytes.buffer);
-      if (header.getUint32(16) < 1 || header.getUint32(16) > 960 || header.getUint32(20) < 1 || header.getUint32(20) > 8192) {
-        throw new Error('La imagen del respaldo tiene dimensiones inválidas.');
-      }
-      png = new Blob([bytes], { type: 'image/png' });
-    }
-    prepared.push(newEntry(record, png, 0, owner));
+    prepared.push(newEntry(record, 0, owner));
   }
   if (owner !== profile) throw new Error('La cuenta cambió.');
   const amount = await importLocal(owner, prepared);
@@ -689,13 +657,13 @@ $('backup').onclick = () => {
   const query = normalized($('search').value.trim());
   const exportButton = button('Descargar respaldo', async () => {
     exportButton.disabled = true;
-    status.textContent = 'Preparando los conteos y las imágenes…';
+    status.textContent = 'Preparando los conteos…';
     try { await backup(query); status.textContent = 'Respaldo descargado.'; }
     catch (error) { status.textContent = error.message || 'No se pudo descargar el respaldo.'; }
     finally { exportButton.disabled = false; }
   }, 'primary');
   const status = dom('p');
-  showSheet('HISTORIAL', 'Respaldo del historial').append(dom('p', query ? 'La descarga incluirá los conteos y PNG de la búsqueda actual.' : 'Podés descargar los conteos y sus PNG, o importar un respaldo de esta app o de Mi Conteo.'), sheetButtons(exportButton,
+  showSheet('HISTORIAL', 'Respaldo del historial').append(dom('p', query ? 'La descarga incluirá los conteos de la búsqueda actual.' : 'Podés descargar los conteos o importar un respaldo de esta app o de Mi Conteo.'), sheetButtons(exportButton,
     button('Importar JSON', () => $('backupFile').click())), status);
 };
 $('backupFile').onchange = async () => {

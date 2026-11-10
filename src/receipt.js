@@ -155,7 +155,7 @@ export async function createPng(record) {
     const blob = await blobFromCanvas(draw(record, totals, images, scale), 'image/png');
     if (blob.size <= MAX_PNG) return blob;
   }
-  throw new Error('La imagen excede el tamaño de sincronización. Acortá las notas e intentá de nuevo.');
+  throw new Error('La imagen excede el tamaño máximo de exportación. Acortá las notas e intentá de nuevo.');
 }
 export async function createPdf(png) {
   const image = await createImageBitmap(png);

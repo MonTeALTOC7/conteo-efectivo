@@ -49,10 +49,6 @@ service cloud.firestore {
         (data.expectedCents == null || (data.expectedCents is int && data.expectedCents >= 0 && data.expectedCents <= 1000000000000)) &&
         validCounts(data.counts) && data.total is int && data.total > 0 && data.total == total(data.counts);
     }
-    function matchingImage(uid, id, data) {
-      let image = getAfter(imagePath(uid,id)).data;
-      return image.revision == data.revision && image.mutation == data.mutation;
-    }
     function validTombstone(data, uid, id) {
       return validCore(data,id) && data.deleted == true &&
         data.keys().hasOnly(['id','revision','mutation','updatedAt','deleted']) && !existsAfter(imagePath(uid,id));
@@ -60,23 +56,15 @@ service cloud.firestore {
     match /users/{uid}/counts/{id} {
       allow get, list: if owner(uid);
       allow create: if owner(uid) && request.resource.data.revision == 1 &&
-        validRecord(request.resource.data,id) && matchingImage(uid,id,request.resource.data);
+        validRecord(request.resource.data,id);
       allow update: if owner(uid) && resource.data.deleted == false &&
         request.resource.data.revision == resource.data.revision + 1 &&
-        ((validRecord(request.resource.data,id) && matchingImage(uid,id,request.resource.data)) ||
+        (validRecord(request.resource.data,id) ||
           validTombstone(request.resource.data,uid,id));
     }
     match /users/{uid}/images/{id} {
       allow get: if owner(uid);
-      allow create, update: if owner(uid) && validImage(request.resource.data,uid,id);
       allow delete: if owner(uid) && getAfter(countPath(uid,id)).data.deleted == true;
-    }
-    function validImage(image, uid, id) {
-      let count = getAfter(countPath(uid,id)).data;
-      return image.keys().hasOnly(['revision','mutation','png']) &&
-        image.png is bytes && image.png.size() > 0 && image.png.size() <= 460800 &&
-        count.deleted == false && count.revision == image.revision && count.mutation == image.mutation &&
-        (!exists(countPath(uid,id)) || get(countPath(uid,id)).data.mutation != image.mutation);
     }
   }
 }
