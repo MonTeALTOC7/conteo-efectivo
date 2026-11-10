@@ -74,9 +74,6 @@ test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', asy
   expect(png.bytes.subarray(0,8)).toEqual(Buffer.from([137,80,78,71,13,10,26,10]));
   expect(png.bytes.readUInt32BE(16)).toBeGreaterThanOrEqual(643);
   expect(png.bytes.length).toBeLessThanOrEqual(450 * 1024);
-  await page.getByRole('button', { name:'Diseño actual', exact:true }).click();
-  const newDesign = await download(page, 'Descargar PNG');
-  expect(newDesign.bytes).toEqual(png.bytes);
   const pdf = await download(page, 'PDF');
   expect(pdf.bytes.subarray(0,8).toString()).toBe('%PDF-1.4');
   if (process.env.CAPTURE_QA === '1') {
@@ -88,6 +85,12 @@ test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', asy
   await history(page);
   await page.getByRole('searchbox').fill('noviembre');
   await expect(page.locator('.history-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Respaldo', exact: true }).click();
+  const backup = JSON.parse((await download(page, 'Descargar respaldo')).bytes.toString());
+  expect(backup.version).toBe(3);
+  expect(backup.records).toHaveLength(1);
+  expect(backup.records[0]).not.toHaveProperty('png');
+  await close(page);
   await selectEntry(page, 'Banpro');
   await page.getByRole('button', { name: 'Editar', exact: true }).click();
   await expect(page.locator('#countName')).toHaveValue('Banpro · Noviembre');
@@ -130,6 +133,18 @@ test('respaldo anterior: importa sin duplicar y conserva notas', async ({page}) 
     await expect(page.locator('#sheetBody')).toContainText(number + ' conteos nuevos importados.');
     await close(page);
   }
+  const oldRecord = {
+    ...item, id: crypto.randomUUID(), name: 'Respaldo v2', destination: '', notes: 'Solo datos',
+    date: '2026-11-08', expected: '', counts: { b50: 1 }, png: 'Imagen anterior ignorada'
+  };
+  await page.locator('#backupFile').setInputFiles({
+    name: 'conteo-v2.json', mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ app: 'conteo-efectivo', version: 2, records: [oldRecord] }))
+  });
+  await page.getByRole('button', { name: 'Importar', exact: true }).click();
+  await expect(page.locator('#sheetBody')).toContainText('1 conteos nuevos importados.');
+  await close(page);
+  await expect(page.locator('.history-card').filter({ hasText: 'Respaldo v2' })).toBeVisible();
   await selectEntry(page, 'Conteo antiguo');
   await expect(page.locator('#sheetBody')).toContainText('Nota histórica');
   await expect(page.locator('#sheetBody')).toContainText('08/11/2026 · C$ 250.00');
@@ -156,7 +171,7 @@ async function signIn(page, account) {
   await expect(page.locator('#sheet')).not.toBeVisible();
   await expect(page.locator('#account')).toHaveAttribute('data-state','online');
 }
-test('Firebase: cola offline, PNG idéntico, aislamiento y edición concurrente', async ({browser, request}) => {
+test('Firebase: cola offline, PNG local, aislamiento y edición concurrente', async ({browser, request}) => {
   test.skip(!process.env.FIRESTORE_EMULATOR_HOST, 'Requiere emuladores');
   const owner = await testAccount(request, 'owner');
   const other = await testAccount(request, 'other');
@@ -178,10 +193,12 @@ test('Firebase: cola offline, PNG idéntico, aislamiento y edición concurrente'
   await expect(first.locator('#draftStatus')).toContainText('Pendiente de sincronizar');
   await first.getByRole('button', {name:'Ver PNG'}).click();
   const original = await download(first, 'Descargar PNG');
-  const docId = await first.evaluate(async () => {
+  const saved = await first.evaluate(async () => {
     const db = await new Promise(resolve => { const r = indexedDB.open('conteo-efectivo-v1'); r.onsuccess = () => resolve(r.result); });
-    return new Promise(resolve => { const r = db.transaction('records').objectStore('records').getAll(); r.onsuccess = () => resolve(r.result[0].record.id); });
+    return new Promise(resolve => { const r = db.transaction('records').objectStore('records').getAll(); r.onsuccess = () => resolve(r.result[0]); });
   });
+  expect(saved).not.toHaveProperty('png');
+  const docId = saved.record.id;
   await first.close();
   const reopened = await a.newPage();
   await reopened.goto(route);
@@ -194,9 +211,11 @@ test('Firebase: cola offline, PNG idéntico, aislamiento y edición concurrente'
   await expect(reopened.locator('.history-card')).toContainText('Guardado en la nube');
   await expect(second.locator('.history-card')).toContainText('Pago Managua');
   await selectEntry(second, 'Pago Managua');
+  await b.setOffline(true);
   await second.getByRole('button', {name:'Abrir PNG'}).click();
   expect((await download(second, 'Descargar PNG')).bytes).toEqual(original.bytes);
   await close(second);
+  await b.setOffline(false);
 
   const path = 'http://127.0.0.1:8080/v1/projects/demo-conteo-efectivo/databases/(default)/documents/users/' + owner.localId;
   const headers = { Authorization: 'Bearer ' + other.idToken };
@@ -211,13 +230,19 @@ test('Firebase: cola offline, PNG idéntico, aislamiento y edición concurrente'
   expect(fields.counts.mapValue.fields.m500.integerValue).toBe('1');
   fields.revision = { integerValue:'2' };
   fields.mutation = { stringValue:crypto.randomUUID() };
-  fields.notes = { stringValue:'Cambio directo sin actualizar la imagen' };
+  fields.total = { integerValue:'1' };
   expect((await request.patch(path + '/counts/' + docId, {headers:ownerHeaders,data:{fields}})).status()).toBe(403);
-  expect((await request.delete(path + '/images/' + docId, {headers:ownerHeaders})).status()).toBe(403);
+  const imageUrl = path + '/images/' + docId;
+  expect((await request.get(imageUrl, {headers:ownerHeaders})).status()).toBe(404);
+  expect((await request.patch(imageUrl, {headers:ownerHeaders, data:{fields:{
+    revision: { integerValue:'1' }, mutation: (await originalDoc.json()).fields.mutation,
+    png: { bytesValue: original.bytes.toString('base64') }
+  }}})).status()).toBe(403);
   await selectEntry(reopened, 'Pago Managua');
   await reopened.getByRole('button', {name:'Editar', exact:true}).click();
   await a.setOffline(true);
   await reopened.locator('#notes').fill('Cambio offline');
+  await reopened.locator('#countName').fill('Versión offline');
   await reopened.getByRole('button', {name:'Actualizar conteo', exact:true}).click();
   await expect(reopened.locator('#draftStatus')).toContainText('Pendiente de sincronizar');
   await selectEntry(second, 'Pago Managua');
@@ -250,6 +275,19 @@ test('Firebase: cola offline, PNG idéntico, aislamiento y edición concurrente'
     return new Promise(resolve => { const r = db.transaction('records').objectStore('records').getAll(); r.onsuccess = () => resolve(r.result.filter(entry => entry.status === 'pending').length); });
   })).toBe(0);
   await expect(second.locator('.history-card')).toHaveCount(2);
+
+  // Admin access is limited to this emulator. Simulate an image written by v1.
+  const originalFields = (await originalDoc.json()).fields;
+  const seed = await request.patch(imageUrl, {headers:{Authorization:'Bearer owner'}, data:{fields:{
+    revision: originalFields.revision, mutation: originalFields.mutation,
+    png: { bytesValue: original.bytes.toString('base64') }
+  }}});
+  expect(seed.ok()).toBeTruthy();
+  await selectEntry(second, 'Pago Managua');
+  await second.getByRole('button', {name:'Eliminar', exact:true}).click();
+  await second.getByRole('button', {name:'Eliminar', exact:true}).click();
+  await expect(reopened.locator('.history-card')).toHaveCount(1);
+  expect((await request.get(imageUrl, {headers:ownerHeaders})).status()).toBe(404);
   await a.close();
   await b.close();
 });

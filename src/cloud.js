@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { Bytes, collection, connectFirestoreEmulator, doc, getDocFromServer, initializeFirestore, onSnapshot, runTransaction } from 'firebase/firestore';
+import { collection, connectFirestoreEmulator, doc, initializeFirestore, onSnapshot, runTransaction } from 'firebase/firestore';
 
 const env = import.meta.env;
 export const emulator = env.VITE_USE_FIREBASE_EMULATOR === '1' && ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -42,17 +42,9 @@ export function observeHistory(uid, callback, onError) {
     if (!snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites) callback(snapshot.docs.map(item => ({ ...item.data(), id: item.id })));
   }, onError);
 }
-export async function fetchPng(uid, id, mutation) {
-  const snapshot = await getDocFromServer(imageDoc(uid, id));
-  const image = snapshot.data();
-  if (!image || image.mutation !== mutation) throw new Error('La imagen cambió. Abrí de nuevo el conteo.');
-  return new Blob([image.png.toUint8Array()], { type: 'image/png' });
-}
 export class SyncConflict extends Error {}
 export async function push(uid, entry) {
   const recordRef = countDoc(uid, entry.record.id);
-  const imageRef = imageDoc(uid, entry.record.id);
-  const png = entry.png ? Bytes.fromUint8Array(new Uint8Array(await entry.png.arrayBuffer())) : null;
   return runTransaction(db, async transaction => {
     const current = (await transaction.get(recordRef)).data();
     if (current?.mutation === entry.record.mutation) return current;
@@ -63,8 +55,7 @@ export async function push(uid, entry) {
     }
     const record = { ...entry.record, revision: (current?.revision || 0) + 1 };
     transaction.set(recordRef, record);
-    if (record.deleted) transaction.delete(imageRef);
-    else transaction.set(imageRef, { revision: record.revision, mutation: record.mutation, png });
+    if (record.deleted) transaction.delete(imageDoc(uid, record.id));
     return record;
   });
 }
