@@ -155,8 +155,9 @@ dialog::backdrop{background:#0c291eb0}
 .sheet-buttons .button{white-space:normal;text-align:center}
 #toast{position:fixed;z-index:6;bottom:calc(97px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);border-radius:12px;background:#1a4638;color:white;padding:9px 13px;font-size:13px;box-shadow:0 6px 20px #13372e50}
 .workspace{grid-template-areas:"hero" "personal" "count" "details" "actions"}
+@media(max-width:374px){.account #accountLabel{display:none}}
 @media(max-width:359px){
- .shell{width:calc(100% - 22px)}.account #accountLabel{display:none}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
+ .shell{width:calc(100% - 22px)}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
 }
 @media(min-width:680px){
  .shell{width:min(100% - 52px,1140px)}.topbar{min-height:67px}.brand-muted{display:inline}.brand{font-size:19px}.nav button{font-size:13px;padding-inline:12px}.nav button [data-icon]{display:inline-grid}.nav svg{width:15px;height:15px}.account{font-size:13px}.mini-total{display:none!important}

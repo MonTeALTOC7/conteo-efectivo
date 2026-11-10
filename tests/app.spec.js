@@ -39,7 +39,7 @@ async function dispatchInstallPrompt(page) {
 }
 
 test('instalación: ofrece el instalador sin buscar un botón y espera si hay otro diálogo', async ({browser}) => {
-  const context = await browser.newContext(phone);
+  const context = await browser.newContext({...phone, viewport:{width:360,height:780}});
   const page = await context.newPage();
   await page.goto(route);
   await waitReady(page);
@@ -49,6 +49,7 @@ test('instalación: ofrece el instalador sin buscar un botón y espera si hay ot
   await expect(notice).toBeHidden();
   await close(page);
   await expect(notice).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
   await expect(page.locator('body')).not.toHaveAttribute('data-install-prompt-called', 'yes');
   await notice.getByRole('button', {name:'Instalar ahora'}).click();
   await expect(page.locator('body')).toHaveAttribute('data-install-prompt-called', 'yes');
