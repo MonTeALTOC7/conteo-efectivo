@@ -26,6 +26,64 @@ async function selectEntry(page, title) {
   await page.locator('.history-card').filter({ hasText: title }).getByRole('button', { name: 'Ver conteo' }).click();
 }
 
+async function dispatchInstallPrompt(page) {
+  return page.evaluate(() => {
+    const event = new Event('beforeinstallprompt', {cancelable:true});
+    event.prompt = async () => {
+      document.body.dataset.installPromptCalled = 'yes';
+      window.dispatchEvent(new Event('appinstalled'));
+      return { outcome:'accepted' };
+    };
+    return window.dispatchEvent(event);
+  });
+}
+
+test('instalación: ofrece el instalador sin buscar un botón y espera si hay otro diálogo', async ({browser}) => {
+  const context = await browser.newContext(phone);
+  const page = await context.newPage();
+  await page.goto(route);
+  await waitReady(page);
+  await page.getByRole('button', {name:'Cuenta y sincronización'}).click();
+  expect(await dispatchInstallPrompt(page)).toBe(false);
+  const notice = page.getByRole('dialog', {name:'Instalá Conteo de Efectivo'});
+  await expect(notice).toBeHidden();
+  await close(page);
+  await expect(notice).toBeVisible();
+  await expect(page.locator('body')).not.toHaveAttribute('data-install-prompt-called', 'yes');
+  await notice.getByRole('button', {name:'Instalar ahora'}).click();
+  await expect(page.locator('body')).toHaveAttribute('data-install-prompt-called', 'yes');
+  await expect(notice).toBeHidden();
+  await dispatchInstallPrompt(page);
+  await expect(notice).toBeHidden();
+  await context.close();
+});
+
+test('instalación: respeta Ahora no y omite la invitación en modo instalado', async ({page, browser}) => {
+  await page.goto(route);
+  await waitReady(page);
+  await dispatchInstallPrompt(page);
+  const notice = page.getByRole('dialog', {name:'Instalá Conteo de Efectivo'});
+  await notice.getByRole('button', {name:'Ahora no'}).click();
+  await page.reload();
+  await waitReady(page);
+  expect(await dispatchInstallPrompt(page)).toBe(true);
+  await expect(notice).toBeHidden();
+
+  const installed = await browser.newContext(phone);
+  const app = await installed.newPage();
+  await app.addInitScript(() => {
+    const match = window.matchMedia.bind(window);
+    window.matchMedia = query => query === '(display-mode: standalone)'
+      ? {matches:true, addEventListener() {}}
+      : match(query);
+  });
+  await app.goto(route);
+  await waitReady(app);
+  expect(await dispatchInstallPrompt(app)).toBe(true);
+  await expect(app.getByRole('dialog', {name:'Instalá Conteo de Efectivo'})).toBeHidden();
+  await installed.close();
+});
+
 test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', async ({browser}) => {
   const context = await browser.newContext(phone);
   const page = await context.newPage();
