@@ -85,6 +85,36 @@ test('instalación: respeta Ahora no y omite la invitación en modo instalado', 
   await installed.close();
 });
 
+test('el service worker no intercepta el retorno de Firebase Auth', async ({page}) => {
+  await page.goto(route);
+  await waitReady(page);
+  await page.route('**/__/auth/handler*', route => route.fulfill({status:200, contentType:'text/html', body:'<!doctype html><title>Firebase handler de prueba</title><p>Retorno seguro</p>'}));
+  await page.goto('/__/auth/handler?test=1');
+  await expect(page).toHaveTitle('Firebase handler de prueba');
+  await expect(page.getByText('Retorno seguro')).toBeVisible();
+});
+
+test('tarjeta fija cabe en el resumen y se mantiene aunque existan preferencias antiguas', async ({browser}) => {
+  const context = await browser.newContext({...phone, viewport:{width:320,height:780}});
+  const page = await context.newPage();
+  await page.addInitScript(() => localStorage.setItem('conteo-efectivo:personal-portrait', ''));
+  await page.goto(route);
+  await waitReady(page);
+  const portrait = page.getByRole('img', {name:'Carlos José vestido de doctor'});
+  await expect(portrait).toBeVisible();
+  await expect(page.getByText('Nuestro futuro médico')).toBeVisible();
+  await expect(page.getByRole('button', {name:/Cambiar foto|Quitar foto|Agregar foto/})).toHaveCount(0);
+  const bounds = await page.evaluate(() => {
+    const rect = selector => { const r = document.querySelector(selector).getBoundingClientRect(); return {top:r.top, bottom:r.bottom, left:r.left, right:r.right}; };
+    return {portrait:rect('#personalPortrait'), total:rect('#total'), hero:rect('.hero'), bills:rect('.counting'), width:document.documentElement.scrollWidth};
+  });
+  expect(bounds.width).toBe(320);
+  expect(bounds.portrait.bottom).toBeLessThanOrEqual(bounds.total.top);
+  expect(bounds.portrait.right).toBeLessThanOrEqual(bounds.hero.right);
+  expect(bounds.bills.top - bounds.hero.bottom).toBeLessThan(20);
+  await context.close();
+});
+
 test('móvil: cuenta centavos, conserva borrador offline y exporta PNG/PDF', async ({browser}) => {
   const context = await browser.newContext(phone);
   const page = await context.newPage();

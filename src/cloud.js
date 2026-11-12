@@ -1,5 +1,6 @@
+import { useRedirect } from './auth-flow.js';
 import { initializeApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
 import { collection, connectFirestoreEmulator, doc, initializeFirestore, onSnapshot, runTransaction } from 'firebase/firestore';
 
 const env = import.meta.env;
@@ -28,8 +29,11 @@ export function observeAccount(callback) {
   return () => {};
 }
 export function connectAccount() {
-  return signInWithPopup(auth, new GoogleAuthProvider());
+  const provider = new GoogleAuthProvider();
+  return useRedirect(navigator.userAgent, location.hostname, env.VITE_FIREBASE_AUTH_DOMAIN)
+    ? signInWithRedirect(auth, provider) : signInWithPopup(auth, provider);
 }
+export const finishRedirect = () => auth && !emulator ? getRedirectResult(auth) : Promise.resolve(null);
 export function connectTestAccount(email, password) {
   if (!emulator) throw new Error('Acceso de pruebas desactivado.');
   return signInWithEmailAndPassword(auth, email, password);

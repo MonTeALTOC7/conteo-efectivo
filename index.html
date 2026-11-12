@@ -63,6 +63,10 @@
               <path d="M38 55v12m-6-6h12M283 36v16m-8-8h16M183 209v10m-5-5h10" stroke="#d1ffad" stroke-opacity=".65" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </div>
+          <aside class="personal-card" aria-labelledby="personalCardTitle">
+            <img id="personalPortrait" src="/src/assets/carlos-jose.webp" alt="Carlos José vestido de doctor">
+            <div><strong id="personalCardTitle">Carlos José</strong><p>Nuestro futuro médico</p></div>
+          </aside>
           <div class="hero-content">
             <div class="hero-label"><span data-icon="wallet"></span> EFECTIVO CONTADO</div>
             <div class="amount" id="total" aria-live="polite">C$ 0.00</div>
@@ -72,15 +76,6 @@
             </div>
           </div>
         </section>
-        <aside class="personal-card" aria-labelledby="personalCardTitle">
-          <img id="personalPortrait" alt="Carlos José vestido de doctor" hidden>
-          <span class="personal-icon" data-icon="image" aria-hidden="true"></span>
-          <div><strong id="personalCardTitle">Carlos José</strong><p>Nuestro pequeño doctor.</p>
-            <div class="personal-actions"><button id="personalChoose" type="button">Agregar foto</button><button id="personalRemove" type="button" hidden>Quitar foto</button></div>
-            <p id="personalStatus" role="status"></p>
-          </div>
-          <input id="personalFile" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Foto de Carlos José" hidden>
-        </aside>
         <section class="panel counting" aria-labelledby="billsTitle">
           <div class="panel-heading"><span class="panel-icon" data-icon="bills"></span><div><h2 id="billsTitle">Billetes</h2><p>Identificá el billete e ingresá la cantidad</p></div><span class="pill" id="activeBills">0 de 8</span></div>
           <div class="denom-labels"><span>Denominación</span><span>Cantidad</span><span>Subtotal</span></div>

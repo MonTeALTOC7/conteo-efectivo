@@ -1,3 +1,4 @@
+import portraitUrl from './assets/carlos-jose.webp';
 import { MAX_PNG, money, quantity, showDate, summarize } from './model.js';
 import { loadCurrencyImages } from './currency-art.js';
 
@@ -52,7 +53,7 @@ function section(ctx, label, lines, y, size) {
   return y - 1;
 }
 
-function draw(record, totals, images, scale) {
+function draw(record, totals, images, portrait, scale) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   const title = wrap(ctx, record.name, inner, 40, 700);
@@ -62,7 +63,7 @@ function draw(record, totals, images, scale) {
   const notes = noteText ? wrap(ctx, noteText, inner - 36, 23) : [];
   const rowHeight = 76;
   const detailHeight = lines => lines.length ? 52 + lines.length * 33 : 0;
-  const height = 539 + title.length * 48 + (record.expectedCents === null ? 0 : 78)
+  const height = 659 + title.length * 48 + (record.expectedCents === null ? 0 : 78)
     + detailHeight(destination) + detailHeight(notes) + totals.rows.length * rowHeight;
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
@@ -102,6 +103,15 @@ function draw(record, totals, images, scale) {
     text(ctx, money(amount), x + 16, y + 58, { size: 27, weight: 700 });
   }
   y += 91;
+  box(ctx, pad, y, inner, 104, 14, '#f5f9f6');
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(pad + 12, y + 9, 78, 86, 12); ctx.clip();
+  const crop = Math.min(portrait.naturalWidth, portrait.naturalHeight * 78 / 86);
+  ctx.drawImage(portrait, (portrait.naturalWidth - crop) / 2, 0, crop, crop * 86 / 78, pad + 12, y + 9, 78, 86);
+  ctx.restore();
+  text(ctx, 'Carlos José', pad + 110, y + 43, { size: 23, weight: 700 });
+  text(ctx, 'Nuestro futuro médico', pad + 110, y + 72, { size: 19, color: colors.muted });
+  y += 120;
   if (record.expectedCents !== null) {
     const delta = totals.total - record.expectedCents;
     const shade = delta < 0 ? '#903e23' : colors.green;
@@ -151,8 +161,11 @@ const blobFromCanvas = (canvas, type, quality) => new Promise((resolve, reject) 
 export async function createPng(record) {
   const totals = summarize(record.counts);
   const images = await loadCurrencyImages(totals.rows);
+  const portrait = new Image();
+  portrait.src = portraitUrl;
+  await portrait.decode();
   for (const scale of [1, .9, .78, .67]) {
-    const blob = await blobFromCanvas(draw(record, totals, images, scale), 'image/png');
+    const blob = await blobFromCanvas(draw(record, totals, images, portrait, scale), 'image/png');
     if (blob.size <= MAX_PNG) return blob;
   }
   throw new Error('La imagen excede el tamaño máximo de exportación. Acortá las notas e intentá de nuevo.');

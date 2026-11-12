@@ -108,15 +108,12 @@ details[open]>summary .chevron{transform:rotate(180deg)}
 .count-actions{grid-area:actions;position:fixed;z-index:2;bottom:0;left:0;right:0;background:#f3f8f4f7;border-top:1px solid #d7e7db;padding:9px 16px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(14px)}
 .action-buttons{display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
 .count-actions p{font-size:10px;color:var(--muted);margin-top:6px;text-align:center;min-height:14px}
-.personal-card{grid-area:personal;display:flex;align-items:center;gap:12px;padding:7px 12px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(115deg,#e6f2e9,#fbfdfb 65%);box-shadow:var(--shadow)}
-.personal-card img,.personal-icon{width:58px;height:62px;flex:none;background:#d9eade;border-radius:12px;color:#2d7157}
-.personal-card img{object-fit:cover;object-position:center top}
-.personal-card:has(img:not([hidden])) .personal-icon{display:none}
-.personal-card strong{font-size:14px}
-.personal-card p{font-size:12px;color:var(--muted);line-height:1.45}
-.personal-actions{display:flex;gap:12px}
-.personal-actions button{padding:0;border:0;background:none;color:var(--green);font-size:12px;font-weight:750;min-height:36px;text-decoration:underline}
-#personalStatus:empty{display:none}
+.personal-card{position:absolute;right:14px;top:12px;display:flex;align-items:center;gap:7px;max-width:48%;color:#fff;text-align:right}
+.personal-card img{order:2;width:49px;height:54px;flex:none;border-radius:10px;object-fit:cover;object-position:center top;border:1px solid #ccebd8}
+.personal-card strong{display:block;font-size:11px;line-height:1.2}
+.personal-card p{font-size:10px;line-height:1.2;color:#ddf3e1;margin-top:3px}
+.hero-label{min-height:58px;align-items:flex-start;padding-top:4px;max-width:48%}
+.hero-art{display:none}
 footer{display:flex;align-items:center;gap:6px;margin-top:17px;color:var(--muted);font-size:11px}
 footer svg{width:14px!important;height:14px!important}
 .banner{background:#fff0df;color:#783d22;padding:9px 12px;border-radius:10px;margin-bottom:12px;font-size:13px}
@@ -154,15 +151,16 @@ dialog::backdrop{background:#0c291eb0}
 .sheet-buttons{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .sheet-buttons .button{white-space:normal;text-align:center}
 #toast{position:fixed;z-index:6;bottom:calc(97px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);border-radius:12px;background:#1a4638;color:white;padding:9px 13px;font-size:13px;box-shadow:0 6px 20px #13372e50}
-.workspace{grid-template-areas:"hero" "personal" "count" "details" "actions"}
+.workspace{grid-template-areas:"hero" "count" "details" "actions"}
 @media(max-width:374px){.account #accountLabel{display:none}}
 @media(max-width:359px){
+ .topbar{gap:4px}.brand{font-size:14px}.nav button{font-size:11px;padding-inline:5px}
  .shell{width:calc(100% - 22px)}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
 }
 @media(min-width:680px){
  .shell{width:min(100% - 52px,1140px)}.topbar{min-height:67px}.brand-muted{display:inline}.brand{font-size:19px}.nav button{font-size:13px;padding-inline:12px}.nav button [data-icon]{display:inline-grid}.nav svg{width:15px;height:15px}.account{font-size:13px}.mini-total{display:none!important}
  main{padding-top:33px;padding-bottom:20px}.page-heading{margin-bottom:20px}.subtitle{font-size:14px}#newCount{font-size:13px;width:auto;padding:0 13px}
- .workspace{grid-template-columns:minmax(0,1.22fr) minmax(0,1fr);grid-template-rows:auto auto auto 1fr;grid-template-areas:"count hero" "count personal" "count details" "count actions";gap:16px;align-items:start}
+ .workspace{grid-template-columns:minmax(0,1.22fr) minmax(0,1fr);grid-template-rows:auto auto 1fr;grid-template-areas:"count hero" "count details" "count actions";gap:16px;align-items:start}
  .hero{padding:23px 18px 16px}.hero-art{width:185px;right:-15px;top:0}.amount{font-size:clamp(1.7rem,4.3vw,3.3rem)}.amount.compact{font-size:clamp(1.4rem,3.05vw,2.7rem)}.hero-stats strong{font-size:15px}
  .panel-heading{padding:16px}.fields{padding:0 16px 16px}.denom-labels,.denom-row{grid-template-columns:minmax(70px,1fr) 130px minmax(75px,1fr);padding-inline:15px;gap:9px}.denom-row{min-height:58px}.denom,.subtotal{font-size:14px}.quantity{grid-template-columns:40px minmax(0,1fr) 40px;height:42px}
  .count-actions{position:static;padding:0;background:none;border:0;backdrop-filter:none}.count-actions p{text-align:left}
