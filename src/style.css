@@ -154,6 +154,7 @@ dialog::backdrop{background:#0c291eb0}
 .workspace{grid-template-areas:"hero" "count" "details" "actions"}
 @media(max-width:374px){.account #accountLabel{display:none}}
 @media(max-width:359px){
+ .topbar{gap:4px}.brand{font-size:14px}.nav button{font-size:11px;padding-inline:5px}
  .shell{width:calc(100% - 22px)}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
 }
 @media(min-width:680px){
