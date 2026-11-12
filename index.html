@@ -124,11 +124,26 @@
         <div id="historyList" class="history-list"></div>
       </div>
     </section>
-    <footer><span data-icon="shield"></span><span>PWA independiente · Conteos privados por cuenta</span><button type="button" id="install">Instalar app</button></footer>
+    <footer><span data-icon="shield"></span><span>PWA independiente · Conteos privados por cuenta</span></footer>
   </main>
   <dialog id="sheet" aria-labelledby="sheetTitle">
     <div class="sheet-top"><div><p class="kicker" id="sheetKicker"></p><h2 id="sheetTitle"></h2></div><button class="icon-button" type="button" id="closeSheet" aria-label="Cerrar"><span data-icon="close"></span></button></div>
     <div class="sheet-body" id="sheetBody"></div>
+  </dialog>
+  <dialog id="installNotice" aria-labelledby="installTitle" aria-describedby="installDescription">
+    <div class="install-copy">
+      <img src="./icons/icon-192.png" width="58" height="58" alt="">
+      <div>
+        <p class="kicker">ACCESO DIRECTO</p>
+        <h2 id="installTitle">Instalá Conteo de Efectivo</h2>
+      </div>
+    </div>
+    <p id="installDescription">Agregá el ícono a tu pantalla de inicio para abrir tus conteos con un toque.</p>
+    <div class="install-actions">
+      <button type="button" class="button primary" id="installNow" autofocus><span data-icon="download"></span>Instalar ahora</button>
+      <a class="button primary" id="installChrome" hidden>Abrir en Chrome</a>
+      <button type="button" class="button ghost" id="installLater">Ahora no</button>
+    </div>
   </dialog>
   <div id="toast" role="status" hidden></div>
   <input type="file" id="backupFile" accept=".json,application/json" hidden>

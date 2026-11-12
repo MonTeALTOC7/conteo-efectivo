@@ -119,7 +119,6 @@ details[open]>summary .chevron{transform:rotate(180deg)}
 #personalStatus:empty{display:none}
 footer{display:flex;align-items:center;gap:6px;margin-top:17px;color:var(--muted);font-size:11px}
 footer svg{width:14px!important;height:14px!important}
-footer button{margin-left:auto;min-height:40px;color:#265842;border:0;background:none;font-size:11px;font-weight:800;text-decoration:underline}
 .banner{background:#fff0df;color:#783d22;padding:9px 12px;border-radius:10px;margin-bottom:12px;font-size:13px}
 .history-panel{overflow:hidden}
 .history-tools{padding:12px;display:flex;gap:8px;border-bottom:1px solid var(--border)}
@@ -139,6 +138,13 @@ footer button{margin-left:auto;min-height:40px;color:#265842;border:0;background
 .status-badge[data-status="conflict"],.status-badge[data-status="error"]{color:#92391f}
 dialog{border:1px solid var(--border);border-radius:20px;background:#fff;width:min(100% - 22px,550px);max-height:calc(100dvh - 22px);padding:0;color:var(--ink);box-shadow:0 20px 70px #0c342a55;overflow:auto}
 dialog::backdrop{background:#0c291eb0}
+#installNotice{width:min(100% - 32px,400px);padding:20px}
+.install-copy{display:flex;align-items:center;gap:12px}
+.install-copy img{flex:none;border-radius:15px;box-shadow:0 4px 10px #16352d25}
+.install-copy h2{font-size:clamp(1.2rem,5vw,1.45rem);line-height:1.15;letter-spacing:-.035em;margin-top:4px}
+#installDescription{margin:15px 0;color:var(--muted);font-size:14px;line-height:1.5}
+.install-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.install-actions a{text-decoration:none}
 .sheet-top{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:1}
 .sheet-top h2{font-size:20px;letter-spacing:-.035em;margin-top:3px}
 .icon-button{width:44px;height:44px;justify-content:center;background:#edf4ef;border-radius:12px}
@@ -149,8 +155,9 @@ dialog::backdrop{background:#0c291eb0}
 .sheet-buttons .button{white-space:normal;text-align:center}
 #toast{position:fixed;z-index:6;bottom:calc(97px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 28px);border-radius:12px;background:#1a4638;color:white;padding:9px 13px;font-size:13px;box-shadow:0 6px 20px #13372e50}
 .workspace{grid-template-areas:"hero" "personal" "count" "details" "actions"}
+@media(max-width:374px){.account #accountLabel{display:none}}
 @media(max-width:359px){
- .shell{width:calc(100% - 22px)}.account #accountLabel{display:none}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
+ .shell{width:calc(100% - 22px)}.denom-labels,.denom-row{grid-template-columns:minmax(55px,1fr) 128px minmax(60px,1fr);padding-inline:8px;gap:5px}.denom{font-size:11px}.subtotal{font-size:11px}
 }
 @media(min-width:680px){
  .shell{width:min(100% - 52px,1140px)}.topbar{min-height:67px}.brand-muted{display:inline}.brand{font-size:19px}.nav button{font-size:13px;padding-inline:12px}.nav button [data-icon]{display:inline-grid}.nav svg{width:15px;height:15px}.account{font-size:13px}.mini-total{display:none!important}

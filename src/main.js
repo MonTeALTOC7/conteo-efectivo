@@ -2,6 +2,7 @@ import './style.css';
 import { asDraft, asRecord, denominations, emptyDraft, legacyDraft, legacyId, MAX_QUANTITY, money, normalized, parseExpected, quantity, receiptName, showDate, summarize, today } from './model.js';
 import { currencyImageUrl } from './currency-art.js';
 import './personal-card.js';
+import { setupInstallNotice } from './install.js';
 import { createPdf, createPng } from './receipt.js';
 import { adoptGuest, changeLocal, importLocal, listLocal, mergeRemote, readDraft, writeDraft } from './store.js';
 import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
@@ -49,7 +50,6 @@ let accountReady = false;
 let toastTimer;
 let sheetVersion = 0;
 let objectUrl;
-let installPrompt;
 let saving = false;
 let editingMutation = null;
 let savedDraft = '';
@@ -683,16 +683,7 @@ $('backupFile').onchange = async () => {
   body.append(sheetButtons(apply), status);
 };
 
-window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); installPrompt = event; });
-$('install').onclick = async () => {
-  if (matchMedia('(display-mode: standalone)').matches) { toast('La app ya está instalada.'); return; }
-  if (installPrompt) {
-    await installPrompt.prompt();
-    installPrompt = null;
-    return;
-  }
-  showSheet('ANDROID', 'Instalar Conteo').append(dom('p', 'Abrí la app en Chrome. En el menú ⋮ tocá «Instalar aplicación» o «Agregar a pantalla principal».'));
-};
+setupInstallNotice(toast);
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   navigator.serviceWorker.register(new URL('sw.js', document.baseURI)).catch(error => console.info('Modo sin conexión no disponible', error.message));
 }

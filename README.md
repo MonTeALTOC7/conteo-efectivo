@@ -8,7 +8,7 @@ PWA independiente para Android. Contá billetes y monedas en córdobas, anotá e
 2. Agregá nombre, fecha y notas. Tocá **Guardar conteo**. El borrador y los registros se guardan en el navegador del dispositivo.
 3. En **Nube**, conectá tu cuenta de Google. Los datos de los conteos guardados se sincronizan cuando hay conexión. Volvé a abrir la app para reanudar el envío si la cerraste sin señal.
 4. Desde el historial podés buscar, editar, generar un PNG o exportar un PDF. Los cambios simultáneos se revisan y se pueden conservar como copias.
-5. En Chrome para Android, usá **Instalar app** o el menú ⋮ de Chrome. Abrí la app con internet al menos una vez para descargar su interfaz.
+5. Cuando el navegador habilita la instalación, la app muestra una invitación automáticamente. Tocá **Instalar ahora** y confirmá en el navegador. En navegadores internos de Android reconocidos, se ofrece **Abrir en Chrome**. Si elegís **Ahora no**, podés seguir usando la app y la invitación se omite en esa pestaña durante la sesión.
 
 El historial de otra cuenta queda separado. En un teléfono nuevo, iniciá sesión con la misma cuenta para recuperar el historial. Desde ese historial podés generar PNG sin conexión. El primer acceso con Google requiere internet. La PWA conserva los cambios pendientes si se alcanza la cuota de Firebase.
 
