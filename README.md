@@ -63,4 +63,4 @@ Denominaciones de referencia del Banco Central de Nicaragua.
 
 Las miniaturas informativas de billetes se obtuvieron de fotografías aportadas por el usuario. Las monedas de C$1 y C$5 se tomaron de sus fichas del BCN. Se distribuyen miniaturas de una sola cara con la marca diagonal IMAGEN SIN VALOR, siguiendo los requisitos de reproducción digital del [reglamento del BCN](https://www.bcn.gob.ni/prohibiciones-respecto-del-uso-de-la-moneda).
 
-La tarjeta personal muestra el retrato de Carlos José. Los reemplazos y la preferencia de ocultarlo se guardan en el dispositivo. El retrato queda fuera de los comprobantes.
+La tarjeta y los comprobantes muestran el retrato fijo de Carlos José y la leyenda «Nuestro futuro médico».

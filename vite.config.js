@@ -49,7 +49,9 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || !request.url.startsWith(self.registration.scope)) return;
   const url = new URL(request.url);
   const relative = './' + url.pathname.slice(new URL(self.registration.scope).pathname.length);
-  if (request.mode === 'navigate') {
+  // Firebase Auth owns /__/auth/handler and must receive the actual network response.
+  if (relative.startsWith('./__/')) return;
+  if (request.mode === 'navigate' && (relative === './' || relative === './index.html')) {
     event.respondWith(caches.open(cacheName).then(cache => cache.match('./index.html')).then(response => response || fetch(request)));
   } else if (shell.includes(relative)) {
     event.respondWith(caches.open(cacheName).then(cache => cache.match(relative)).then(response => response || fetch(request)));

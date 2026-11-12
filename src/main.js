@@ -1,11 +1,11 @@
 import './style.css';
 import { asDraft, asRecord, denominations, emptyDraft, legacyDraft, legacyId, MAX_QUANTITY, money, normalized, parseExpected, quantity, receiptName, showDate, summarize, today } from './model.js';
 import { currencyImageUrl } from './currency-art.js';
-import './personal-card.js';
+import { authErrorMessage } from './auth-flow.js';
 import { setupInstallNotice } from './install.js';
 import { createPdf, createPng } from './receipt.js';
 import { adoptGuest, changeLocal, importLocal, listLocal, mergeRemote, readDraft, writeDraft } from './store.js';
-import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
+import { configured, connectAccount, connectTestAccount, disconnectAccount, emulator, finishRedirect, observeAccount, observeHistory, push, SyncConflict } from './cloud.js';
 
 const icons = {
   wallet:'<rect x="3" y="5" width="18" height="15" rx="3"/><path d="M3 9V7a2 2 0 0 1 2-2l11-3M21 11h-5a2 2 0 1 0 0 4h5m-4-2h.01"/>',
@@ -38,6 +38,8 @@ function icon(element) {
 document.querySelectorAll('[data-icon]').forEach(icon);
 let profile = 'guest';
 let user = null;
+let authMessage = '';
+let authPending = configured && !emulator;
 let draft = emptyDraft();
 let records = [];
 let remoteRecords = new Map();
@@ -290,7 +292,7 @@ function renderStatus() {
   const pending = records.filter(entry => entry.status === 'pending').length;
   const conflict = records.some(entry => entry.status === 'conflict');
   $('account').dataset.state = user && navigator.onLine ? 'online' : 'local';
-  $('accountLabel').textContent = user ? (pending ? 'Nube · ' + pending : 'Nube') : 'Nube';
+  $('accountLabel').textContent = authPending ? 'Conectando…' : user ? (pending ? 'Nube · ' + pending : 'Nube') : 'Nube';
   const active = records.find(entry => entry.record.id === draft.id);
   const unchanged = savedDraft === JSON.stringify(draft);
   let message = unchanged && active ? statusText[active.status] : 'Borrador en este dispositivo';
@@ -583,15 +585,20 @@ $('account').onclick = () => {
     }, 'primary'), button('Cerrar sesión', () => disconnectAccount().catch(() => toast('No se pudo cerrar la sesión.')))));
   } else if (configured) {
     body.append(dom('p', 'Conectá tu cuenta para recuperar el historial en otro teléfono. Los conteos locales se vincularán a esa cuenta.'));
-    const start = button('Continuar con Google', () => {
+    const feedback = dom('p', authMessage || (authPending ? 'Comprobando sesión de Google…' : ''));
+    feedback.setAttribute('role', 'status');
+    const start = button('Continuar con Google', async () => {
       start.disabled = true;
-      connectAccount().catch(error => {
+      feedback.textContent = 'Conectando con Google…';
+      try {
+        await storeDraft();
+        await connectAccount();
+      } catch (error) {
+        authMessage = authErrorMessage(error);
+        feedback.textContent = authMessage;
         start.disabled = false;
-        feedback.textContent = error.code === 'auth/unauthorized-domain' ? 'Este dominio todavía no está autorizado en Firebase.' :
-          'No se completó la conexión. Revisá tu internet y volvé a intentar.';
-      });
+      }
     }, 'primary');
-    const feedback = dom('p');
     body.append(sheetButtons(start), feedback);
     if (emulator) {
       const email = dom('input');
@@ -689,3 +696,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 }
 renderEditor();
 observeAccount(queueAccount);
+finishRedirect().catch(error => {
+  authMessage = authErrorMessage(error);
+  warn(authMessage);
+}).finally(() => {
+  authPending = false;
+  renderStatus();
+});
